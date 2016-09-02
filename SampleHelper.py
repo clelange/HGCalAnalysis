@@ -2,6 +2,7 @@
 import commands
 import ROOT
 import logging
+from copy import copy
 
 
 class NullHandler(logging.Handler):
@@ -22,7 +23,8 @@ class Sample(object):
         self.name = name
         self.inDir = inDir
         self.treeName = treeName
-        self.fileList = fileList
+        # fileList needs copy since it's a reference
+        self.fileList = copy(fileList)
 
     def getFiles(self, numberOfFiles=-1):
         """get input files."""
@@ -65,14 +67,13 @@ class SampleManager(object):
         self.eosPrefix = "root://eoscms.cern.ch/"
         self.baseDir = "/eos/cms/store/cmst3/group/hgcal/CMG_studies/Production/"
         self.pathSuffix = "/NTUP/"
-        self.sampleList = {}
+        self.sampleDict = {}
         if initialise:
-            self.sampleList = self.addDefaultSamples()
-            print "self.sampleList", self.sampleList
+            self.sampleDict = self.addDefaultSamples()
             tmpList = {}
-            for name, sample in self.sampleList.items():
+            for name, sample in self.sampleDict.items():
                 tmpList[name] = self.addSampleFiles(sample)
-            self.sampleList = tmpList
+            self.sampleDict = tmpList
             self.printSamples()
 
     def getFullPath(self, inDir, forRoot=False):
@@ -85,7 +86,7 @@ class SampleManager(object):
 
     def addSample(self, name, inDir):
         """add an individual sample."""
-        self.sampleList[name] = Sample(name, inDir)
+        self.sampleDict[name] = Sample(name, inDir)
 
     def addSampleFiles(self, sample):
         """add files to a Sample."""
@@ -97,43 +98,42 @@ class SampleManager(object):
         eosOutput = processCmd(eosCmd)
         for line in eosOutput.split("\n"):
             sample.addFile(self.eosPrefix + searchPath + line)
-            break
         return sample
 
     def addDefaultSamples(self):
         """add default samples."""
-        sampleList = {}
-        # sampleList["photons_nPart1_Pt5"] = Sample(
-        #     "photons_nPart1_Pt5", "partGun_clange_PDGid22_nPart1_Pt5_20160812")
-        # sampleList["chargedPions_nPart1_Pt5"] = Sample(
-        #     "chargedPions_nPart1_Pt5", "partGun_clange_PDGid211_nPart1_Pt5_20160901")
-        # sampleList["chargedPions_nPart1_Pt10"] = Sample(
-        #     "chargedPions_nPart1_Pt10", "partGun_clange_PDGid211_nPart1_Pt10_20160901")
-        sampleList["chargedPions_nPart1_Pt20"] = Sample(
+        sampleDict = {}
+        sampleDict["photons_nPart1_Pt5"] = Sample(
+            "photons_nPart1_Pt5", "partGun_clange_PDGid22_nPart1_Pt5_20160812")
+        sampleDict["chargedPions_nPart1_Pt5"] = Sample(
+            "chargedPions_nPart1_Pt5", "partGun_clange_PDGid211_nPart1_Pt5_20160901")
+        sampleDict["chargedPions_nPart1_Pt10"] = Sample(
+            "chargedPions_nPart1_Pt10", "partGun_clange_PDGid211_nPart1_Pt10_20160901")
+        sampleDict["chargedPions_nPart1_Pt20"] = Sample(
             "chargedPions_nPart1_Pt20", "partGun_clange_PDGid211_nPart1_Pt20_20160901")
-        sampleList["chargedPions_nPart1_Pt35"] = Sample(
+        sampleDict["chargedPions_nPart1_Pt35"] = Sample(
             "chargedPions_nPart1_Pt35", "partGun_clange_PDGid211_nPart1_Pt35_20160901")
-        return sampleList
+        return sampleDict
 
     def getSample(self, sampleName):
         """return Sample by name."""
-        if sampleName not in self.sampleList:
+        if sampleName not in self.sampleDict:
             logging.error("getSample: Sample " + sampleName + "does not exist")
             self.printSamples()
             return 0
-        return self.sampleList[sampleName]
+        return self.sampleDict[sampleName]
 
     def getSamples(self):
         """return Sample name list."""
         sampleNameList = []
-        for sampleName in self.sampleList:
+        for sampleName in self.sampleDict:
             sampleNameList.append(sampleName)
         return sampleNameList
 
     def printSamples(self):
         """print available samples."""
         logging.info("Available samples:")
-        for sampleName, sample in self.sampleList.items():
+        for sampleName, sample in self.sampleDict.items():
             logging.info(" o " + sampleName +
                          " (" + str(len(sample.fileList)) + " files)")
 

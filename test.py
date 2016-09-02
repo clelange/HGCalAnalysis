@@ -6,7 +6,7 @@ import logging
 def main():
 
     logger = logging.getLogger()
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.INFO)
     ch = logging.StreamHandler()
     ch.setLevel(logging.DEBUG)
     formatter = logging.Formatter('%(message)s')
@@ -14,8 +14,6 @@ def main():
 
     sampleManager = SampleManager()
     sample = sampleManager.getSample("chargedPions_nPart1_Pt20")
-    for i in sample.getFiles():
-        print "found file:", i
     chain = sample.getChain()
     nEvents = chain.GetEntries()
     logger.info("Events: %d" % nEvents)
