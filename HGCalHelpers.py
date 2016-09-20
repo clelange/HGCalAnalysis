@@ -21,11 +21,16 @@ def createOutputDir(outDir):
 
 
 def saveHistograms(histDict, canvas, outDir, imgType, logScale=False):
+    logString = ""
     if logScale:
         canvas.SetLogy(True)
+        logString = "_log"
     else:
         canvas.SetLogy(False)
     for key, item in histDict.items():
+        # do not save empty histograms
+        if item.GetEntries() == 0:
+            continue
         if type(item) == ROOT.TH2F:
             item.Draw("colz")
         else:
@@ -33,7 +38,13 @@ def saveHistograms(histDict, canvas, outDir, imgType, logScale=False):
             if key.find("delta") >= 0 and key.find("delta_R") < 0 and key.find("deltaover") < 0:
                 ROOT.gStyle.SetOptFit(1)
                 item.Fit("gaus")
-        canvas.SaveAs("{}/{}.{}".format(outDir, key, imgType))
+        canvas.SaveAs("{}/{}{}.{}".format(outDir, key, logString, imgType))
+        if type(item) == ROOT.TH2F:
+            item.ProjectionX("pX").Draw()
+            canvas.SaveAs("{}/{}{}_projectionX.{}".format(outDir, key, logString, imgType))
+            item.ProjectionY("pY").Draw()
+            canvas.SaveAs("{}/{}{}_projectionY.{}".format(outDir, key, logString, imgType))
+
 
 
 def getGenParticles(event, histDict, dvzCut):
@@ -55,6 +66,7 @@ def getGenParticles(event, histDict, dvzCut):
             histDict["GenPart_pt"].Fill(particle.pt)
             histDict["GenPart_eta"].Fill(particle.eta)
             histDict["GenPart_phi"].Fill(particle.phi)
+            histDict["GenPart_dvz"].Fill(particle.dvz)
         particleTLV = ROOT.TLorentzVector()
         particleTLV.SetPtEtaPhiE(
             particle.pt, particle.eta, particle.phi, particle.energy)

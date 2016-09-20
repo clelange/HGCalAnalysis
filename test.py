@@ -53,6 +53,9 @@ def getHists():
             histDict["%s_cells_fractions" %clus] = ROOT.TH2F("%s_cells_fractions" %clus, "%s_cells_fractions;cells;fractions" %clus, 245, 0, 245, 100, 0, 1)
             histDict["%s_wafers_fractions" %clus] = ROOT.TH2F("%s_wafers_fractions" %clus, "%s_wafers_fractions;wafer;fractions" %clus, 550, 0, 550, 100, 0, 1)
 
+        if (clus == "GenPart"):
+            histDict["%s_dvz" %clus] = ROOT.TH1F("%s_dvz" %clus, "%s_dvz;dvz [cm]" %clus, 100, 0, 500)
+
         if (clus == "RecHits"):
             histDict["%s_layers_energy" %clus] = ROOT.TH2F("%s_layers_energy" %clus, "%s_layers_energy;layers;energy [GeV]" %clus, 40, 0.5, 40.5, 200, 0, 30)
             histDict["%s_layers_pt" %clus] = ROOT.TH2F("%s_layers_pt" %clus, "%s_layers_pt;layers;p_{T} [GeV]" %clus, 40, 0.5, 40.5, 200, 0, 10)
@@ -196,6 +199,9 @@ def main():
                         else:
                             recHitVectors["FH"] += recHitTLV
                 logger.debug("SimCluster pt, E: {}, {} - RecHitVector pt, E: {}, {}".format(simCl.pt, simCl.energy, recHitVectors["both"].Pt(), recHitVectors["both"].E()))
+                # relative pT cut to clean up misreconstructed particles
+                if (recHitVectors["both"].Pt() < 0.8*simCl.pt):
+                    continue
                 histDict["RecHits_energy"].Fill(recHitVectors["both"].E())
                 histDict["RecHits_eta"].Fill(recHitVectors["both"].Eta())
                 histDict["RecHits_phi"].Fill(recHitVectors["both"].Phi())
