@@ -29,8 +29,9 @@ def saveHistograms(histDict, canvas, outDir, imgType, logScale=False):
         canvas.SetLogy(False)
     for key, item in histDict.items():
         # do not save empty histograms
-        if item.GetEntries() == 0:
-            continue
+        if (type(item) == ROOT.TH1F) or (type(item) == ROOT.TH2F):
+            if item.GetEntries() == 0:
+                continue
         if type(item) == ROOT.TH2F:
             item.Draw("colz")
         else:
@@ -40,10 +41,14 @@ def saveHistograms(histDict, canvas, outDir, imgType, logScale=False):
                 item.Fit("gaus")
         canvas.SaveAs("{}/{}{}.{}".format(outDir, key, logString, imgType))
         if type(item) == ROOT.TH2F:
-            item.ProjectionX("pX").Draw()
+            pX = item.ProjectionX("pX")
+            pX.Draw()
             canvas.SaveAs("{}/{}{}_projectionX.{}".format(outDir, key, logString, imgType))
-            item.ProjectionY("pY").Draw()
+            pX.Delete()
+            pY = item.ProjectionY("pY")
+            pY.Draw()
             canvas.SaveAs("{}/{}{}_projectionY.{}".format(outDir, key, logString, imgType))
+            pY.Delete()
 
 
 
