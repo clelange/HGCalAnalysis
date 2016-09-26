@@ -49,6 +49,14 @@ def saveHistograms(histDict, canvas, outDir, imgType, logScale=False):
             pY.Draw()
             canvas.SaveAs("{}/{}{}_projectionY.{}".format(outDir, key, logString, imgType))
             pY.Delete()
+            pfX = item.ProfileX("pfX")
+            pfX.Draw()
+            canvas.SaveAs("{}/{}{}_profileX.{}".format(outDir, key, logString, imgType))
+            pfX.Delete()
+            pfY = item.ProjectionY("pfY")
+            pfY.Draw()
+            canvas.SaveAs("{}/{}{}_profileY.{}".format(outDir, key, logString, imgType))
+            pfY.Delete()
 
 
 
