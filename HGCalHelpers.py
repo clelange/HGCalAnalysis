@@ -53,7 +53,7 @@ def saveHistograms(histDict, canvas, outDir, imgType, logScale=False):
             pfX.Draw()
             canvas.SaveAs("{}/{}{}_profileX.{}".format(outDir, key, logString, imgType))
             pfX.Delete()
-            pfY = item.ProjectionY("pfY")
+            pfY = item.ProfileY("pfY")
             pfY.Draw()
             canvas.SaveAs("{}/{}{}_profileY.{}".format(outDir, key, logString, imgType))
             pfY.Delete()
