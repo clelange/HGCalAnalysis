@@ -20,7 +20,7 @@ class RecHit(object):
 
 class RecHitCollection(object):
     def __init__(self, rechitList = []):
-        self.rechits = copy(rechitList)
+        self.rechits = deepcopy(rechitList)
 
     def addRecHit(rechit):
         self.rechits.append(rechit)
@@ -107,11 +107,11 @@ def getHists():
                 if (categ == "_relative"):
                     pTmax = 1
                     eMax = 1
-                histDict["%s_layers_energy%s" % (clus, categ)] = ROOT.TH2F("%s_layers_energy%s" % (clus, categ), "%s_layers_energy%s;layers;energy [GeV]" % (clus, categ), 40, 0.5, 40.5, 200, 0, eMax)
-                histDict["%s_layers_pt%s" % (clus, categ)] = ROOT.TH2F("%s_layers_pt%s" % (clus, categ), "%s_layers_pt%s;layers;p_{T} [GeV]" % (clus, categ), 40, 0.5, 40.5, 200, 0, pTmax)
-                histDict["%s_layers_delta_R%s" % (clus, categ)] = ROOT.TH2F("%s_layers_delta_R%s" % (clus, categ), "%s_layers_delta_R%s;layers;#Delta R" % (clus, categ), 40, 0.5, 40.5, 100, 0, 1)
-                histDict["%s_layers_delta_eta%s" % (clus, categ)] = ROOT.TH2F("%s_layers_delta_eta%s" % (clus, categ), "%s_layers_delta_R%s;layers;#Delta #eta" % (clus, categ), 40, 0.5, 40.5, 100, -0.5, 0.5)
-                histDict["%s_layers_delta_phi%s" % (clus, categ)] = ROOT.TH2F("%s_layers_delta_phi%s" % (clus, categ), "%s_layers_delta_R%s;layers;#Delta #phi" % (clus, categ), 40, 0.5, 40.5, 100, -0.5, 0.5)
+                histDict["%s_layers_energy%s" % (clus, categ)] = ROOT.TH2F("%s_layers_energy%s" % (clus, categ), "%s_layers_energy%s;layers;energy [GeV]" % (clus, categ), 53, 0.5, 53.5, 200, 0, eMax)
+                histDict["%s_layers_pt%s" % (clus, categ)] = ROOT.TH2F("%s_layers_pt%s" % (clus, categ), "%s_layers_pt%s;layers;p_{T} [GeV]" % (clus, categ), 53, 0.5, 53.5, 200, 0, pTmax)
+                histDict["%s_layers_delta_R%s" % (clus, categ)] = ROOT.TH2F("%s_layers_delta_R%s" % (clus, categ), "%s_layers_delta_R%s;layers;#Delta R" % (clus, categ), 53, 0.5, 53.5, 100, 0, 1)
+                histDict["%s_layers_delta_eta%s" % (clus, categ)] = ROOT.TH2F("%s_layers_delta_eta%s" % (clus, categ), "%s_layers_delta_eta%s;layers;#Delta #eta" % (clus, categ), 53, 0.5, 53.5, 100, -0.5, 0.5)
+                histDict["%s_layers_delta_phi%s" % (clus, categ)] = ROOT.TH2F("%s_layers_delta_phi%s" % (clus, categ), "%s_layers_delta_phi%s;layers;#Delta #phi" % (clus, categ), 53, 0.5, 53.5, 100, -0.5, 0.5)
 
         histDict["%s_dRtoSeed" % clus] = ROOT.TH1F(
             "%s_dRtoSeed" % clus, "%s_dRtoSeed;#Delta R to seed" % clus, 100, -0.2, 0.2)
@@ -152,7 +152,7 @@ def getHists():
             histDict["multi%s_selected_delta_R" % comp] = ROOT.TH1F("multi%s_selected_delta_R" % comp, "multi%s_selected_delta_R;#Delta R" % comp, 100, -1, 1)
             histDict["multi%s_selected_eff" % comp] = ROOT.TH1F("multi%s_selected_eff" % comp, "multi%s_selected_eff;eff." % comp, 2, -0.5, 1.5)
         if comp == "SimVsRecHits":
-            detectors = ["EE", "FH", "both"]
+            detectors = ["EE", "FH", "BH", "FH+BH", "all"]
             etaRanges = ["fullEta", "1p70_1p95", "1p95_2p20", "2p20_2p45", "2p45_2p70"]
             for detect in detectors:
                 for etaR in etaRanges:
@@ -175,10 +175,12 @@ def main():
     localTest = False
     nEvents = -1
     # dvzCut = -1000  # 320
-    simClusPtCut = 16
+    simClusPtCut = 4 # 28 for 35, 16 for 20 sample
     imgType = "pdf"
     applyRecHitsRelPtCut = True
-    outDir = "singlePions"
+    maxLayer = 53
+    sampleName = "chargedPions_nPart1_Pt5_pre15"
+    outDir = sampleName
     if not applyRecHitsRelPtCut:
         outDir = "singlePions_noRelPtCut"
 
@@ -190,7 +192,7 @@ def main():
     ch.setFormatter(formatter)
 
     sampleManager = SampleManager()
-    sample = sampleManager.getSample("chargedPions_nPart1_Pt20")
+    sample = sampleManager.getSample(sampleName)
     chain = sample.getChain()
     if localTest:
         inFile = ROOT.TFile.Open("/afs/cern.ch/user/c/clange/work/HGCal/ntupliser/CMSSW_8_1_0_pre8/src/RecoNtuples/HGCalAnalysis/test/twogamma_pt5_eta2_nosmear_calib_ntuple.root")
@@ -240,7 +242,7 @@ def main():
         #     simClusIndex += 1
 
         # use the SimClusters that "match" the GenParticles and study associated RecHits
-        detectors = ["EE", "FH", "both"]
+        detectors = ["EE", "FH", "BH", "FH+BH", "all"]
         for simClusIndex, simCl in enumerate(event.simcluster):
             histDict["SimClus_energy"].Fill(simCl.energy)
             histDict["SimClus_pt"].Fill(simCl.pt)
@@ -256,7 +258,7 @@ def main():
                 recHitVectorsLayer = {}
                 for detect in detectors:
                     recHitVectors[detect] = ROOT.TLorentzVector()
-                for layer in range(1, 41):
+                for layer in range(1, maxLayer):
                     recHitVectorsLayer[layer] = ROOT.TLorentzVector()
                 allRecHits = []
                 for hitIndexArray in simClusHitAssoc[simClusIndex]:
@@ -268,28 +270,32 @@ def main():
                         histDict["RecHits_layers_pt"].Fill(thisHit.layer, thisHit.pt)
                         recHitTLV = ROOT.TLorentzVector()
                         recHitTLV.SetPtEtaPhiE(thisHit.pt, thisHit.eta, thisHit.phi, thisHit.energy)
-                        recHitVectors["both"] += recHitTLV
+                        recHitVectors["all"] += recHitTLV
                         recHitVectorsLayer[thisHit.layer] += recHitTLV
                         if (thisHit.layer < 29):
                             recHitVectors["EE"] += recHitTLV
-                        else:
+                        elif (thisHit.layer < 41):
                             recHitVectors["FH"] += recHitTLV
-                logger.debug("SimCluster pt, E: {}, {} - RecHitVector pt, E: {}, {}".format(simCl.pt, simCl.energy, recHitVectors["both"].Pt(), recHitVectors["both"].E()))
+                            recHitVectors["FH+BH"] += recHitTLV
+                        else:
+                            recHitVectors["BH"] += recHitTLV
+                            recHitVectors["FH+BH"] += recHitTLV
+                logger.debug("SimCluster pt, E: {}, {} - RecHitVector pt, E: {}, {}".format(simCl.pt, simCl.energy, recHitVectors["all"].Pt(), recHitVectors["all"].E()))
                 (xPosWeighted, yPosWeighted) = getXYWeighted(allRecHits, 30)
                 # relative pT cut to clean up misreconstructed particles
                 if applyRecHitsRelPtCut:
-                    if (recHitVectors["both"].Pt() < 0.8*simCl.pt):
+                    if (recHitVectors["all"].Pt() < 0.8*simCl.pt):
                         continue
                 selectedEvents += 1
-                histDict["RecHits_energy"].Fill(recHitVectors["both"].E())
-                histDict["RecHits_eta"].Fill(recHitVectors["both"].Eta())
-                histDict["RecHits_phi"].Fill(recHitVectors["both"].Phi())
-                histDict["RecHits_pt"].Fill(recHitVectors["both"].Pt())
-                histDict["SimVsRecHits_delta_eta"].Fill(simCl.eta-recHitVectors["both"].Eta())
-                histDict["SimVsRecHits_delta_phi"].Fill(simCl.phi-recHitVectors["both"].Phi())
+                histDict["RecHits_energy"].Fill(recHitVectors["all"].E())
+                histDict["RecHits_eta"].Fill(recHitVectors["all"].Eta())
+                histDict["RecHits_phi"].Fill(recHitVectors["all"].Phi())
+                histDict["RecHits_pt"].Fill(recHitVectors["all"].Pt())
+                histDict["SimVsRecHits_delta_eta"].Fill(simCl.eta-recHitVectors["all"].Eta())
+                histDict["SimVsRecHits_delta_phi"].Fill(simCl.phi-recHitVectors["all"].Phi())
                 recHitClusTot_energy = 0
                 recHitClusTot_pt = 0
-                for layer in range(1, 41):
+                for layer in range(1, maxLayer):
                     if (recHitVectorsLayer[layer].E() > 0):
                         recHitClusTot_energy += recHitVectorsLayer[layer].E()
                         recHitClusTot_pt += recHitVectorsLayer[layer].Pt()
@@ -298,13 +304,13 @@ def main():
                         histDict["RecHitsClus_layers_delta_eta"].Fill(layer, recHitVectorsLayer[layer].Eta() - simCl.eta)
                         histDict["RecHitsClus_layers_delta_phi"].Fill(layer, recHitVectorsLayer[layer].Phi() - simCl.phi)
                         histDict["RecHitsClus_layers_delta_R"].Fill(layer, HGCalHelpers.deltaR2(recHitVectorsLayer[layer], simCl))
-                    histDict["RecHitsClus_layers_energy_relative"].Fill(layer, recHitVectorsLayer[layer].E()/recHitVectors["both"].E())
-                    histDict["RecHitsClus_layers_pt_relative"].Fill(layer, recHitVectorsLayer[layer].Pt()/recHitVectors["both"].Pt())
+                    histDict["RecHitsClus_layers_energy_relative"].Fill(layer, recHitVectorsLayer[layer].E()/recHitVectors["all"].E())
+                    histDict["RecHitsClus_layers_pt_relative"].Fill(layer, recHitVectorsLayer[layer].Pt()/recHitVectors["all"].Pt())
                     histDict["RecHitsClus_layers_energy_cumulative"].Fill(layer, recHitClusTot_energy/simCl.energy)
                     histDict["RecHitsClus_layers_pt_cumulative"].Fill(layer, recHitClusTot_pt/simCl.pt)
                     # histDict["RecHitsClus_layers_eta_cumulative"].Fill(layer, recHitClusTot_eta/simCl.eta)
                 # histDict["SimVsRecHits_delta_R"].Fill(HGCalHelpers.deltaR(simCl, recHitVector))
-                print "XY fun:", xPosWeighted, yPosWeighted, recHitVectorsLayer[30].X(), recHitVectorsLayer[30].Y(), recHitVectorsLayer[30].E()
+                # print "XY fun:", xPosWeighted, yPosWeighted, recHitVectorsLayer[30].X(), recHitVectorsLayer[30].Y(), recHitVectorsLayer[30].E()
                 for detect in detectors:
                     etaR = "fullEta"
                     histDict["SimVsRecHits_delta_energy_%s_%s" % (detect, etaR)].Fill(simCl.energy-recHitVectors[detect].E())

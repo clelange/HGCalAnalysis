@@ -20,7 +20,11 @@ def createOutputDir(outDir):
         os.makedirs(outDir)
 
 
-def saveHistograms(histDict, canvas, outDir, imgType, logScale=False):
+def saveHistograms(histDict, canvas, outDir, imgType, logScale=False, doFit = False):
+
+    # also store histograms in ROOT file
+    outFileName = "%s.root" %outDir
+    outFile = ROOT.TFile(outFileName, "recreate")
     logString = ""
     if logScale:
         canvas.SetLogy(True)
@@ -32,13 +36,16 @@ def saveHistograms(histDict, canvas, outDir, imgType, logScale=False):
         if (type(item) == ROOT.TH1F) or (type(item) == ROOT.TH2F):
             if item.GetEntries() == 0:
                 continue
+        # write histogram to file
+        item.Write()
         if type(item) == ROOT.TH2F:
             item.Draw("colz")
         else:
             item.Draw()
-            if key.find("delta") >= 0 and key.find("delta_R") < 0 and key.find("deltaover") < 0:
-                ROOT.gStyle.SetOptFit(1)
-                item.Fit("gaus")
+            if (doFit):
+                if key.find("delta") >= 0 and key.find("delta_R") < 0 and key.find("deltaover") < 0:
+                    ROOT.gStyle.SetOptFit(1)
+                    item.Fit("gaus")
         canvas.SaveAs("{}/{}{}.{}".format(outDir, key, logString, imgType))
         if type(item) == ROOT.TH2F:
             pX = item.ProjectionX("pX")
@@ -57,7 +64,8 @@ def saveHistograms(histDict, canvas, outDir, imgType, logScale=False):
             pfY.Draw()
             canvas.SaveAs("{}/{}{}_profileY.{}".format(outDir, key, logString, imgType))
             pfY.Delete()
-
+    outFile.Write()
+    outFile.Close()
 
 
 def getGenParticles(event, histDict, dvzCut):

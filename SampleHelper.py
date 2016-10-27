@@ -103,16 +103,27 @@ class SampleManager(object):
     def addDefaultSamples(self):
         """add default samples."""
         sampleDict = {}
-        sampleDict["photons_nPart1_Pt5"] = Sample(
-            "photons_nPart1_Pt5", "partGun_clange_PDGid22_nPart1_Pt5_20160812")
-        sampleDict["chargedPions_nPart1_Pt5"] = Sample(
-            "chargedPions_nPart1_Pt5", "partGun_clange_PDGid211_nPart1_Pt5_20160901")
-        sampleDict["chargedPions_nPart1_Pt10"] = Sample(
-            "chargedPions_nPart1_Pt10", "partGun_clange_PDGid211_nPart1_Pt10_20160901")
-        sampleDict["chargedPions_nPart1_Pt20"] = Sample(
-            "chargedPions_nPart1_Pt20", "partGun_clange_PDGid211_nPart1_Pt20_20160901")
-        sampleDict["chargedPions_nPart1_Pt35"] = Sample(
-            "chargedPions_nPart1_Pt35", "partGun_clange_PDGid211_nPart1_Pt35_20160901")
+        sampleDict["photons_nPart1_Pt5_pre12"] = Sample(
+            "photons_nPart1_Pt5_pre12", "partGun_clange_PDGid22_nPart1_Pt5_20160812")
+        sampleDict["chargedPions_nPart1_Pt5_pre12"] = Sample(
+            "chargedPions_nPart1_Pt5_pre12", "partGun_clange_PDGid211_nPart1_Pt5_20160901")
+        sampleDict["chargedPions_nPart1_Pt10_pre12"] = Sample(
+            "chargedPions_nPart1_Pt10_pre12", "partGun_clange_PDGid211_nPart1_Pt10_20160901")
+        sampleDict["chargedPions_nPart1_Pt20_pre12"] = Sample(
+            "chargedPions_nPart1_Pt20_pre12", "partGun_clange_PDGid211_nPart1_Pt20_20160901")
+        sampleDict["chargedPions_nPart1_Pt35_pre12"] = Sample(
+            "chargedPions_nPart1_Pt35_pre12", "partGun_clange_PDGid211_nPart1_Pt35_20160901")
+        # pre15 samples
+        # sampleDict["photons_nPart1_Pt5_pre15"] = Sample(
+        #     "photons_nPart1_Pt5_pre15", "partGun_predragm_PDGid22_nPart1_Pt5_pre15_20161024")
+        sampleDict["chargedPions_nPart1_Pt5_pre15"] = Sample(
+            "chargedPions_nPart1_Pt5_pre15", "partGun_predragm_PDGid211_nPart1_Pt5_pre15_20161024")
+        sampleDict["chargedPions_nPart1_Pt10_pre15"] = Sample(
+            "chargedPions_nPart1_Pt10_pre15", "partGun_predragm_PDGid211_nPart1_Pt10_pre15_20161024")
+        sampleDict["chargedPions_nPart1_Pt20_pre15"] = Sample(
+            "chargedPions_nPart1_Pt20_pre15", "partGun_predragm_PDGid211_nPart1_Pt20_pre15_20161024")
+        sampleDict["chargedPions_nPart1_Pt35_pre15"] = Sample(
+            "chargedPions_nPart1_Pt35_pre15", "partGun_predragm_PDGid211_nPart1_Pt35_pre15_20161024")
         return sampleDict
 
     def getSample(self, sampleName):
