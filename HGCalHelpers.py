@@ -26,6 +26,11 @@ def saveHistograms(histDict, canvas, outDir, imgType, logScale=False, doFit = Fa
     outFileName = "%s.root" %outDir
     outFile = ROOT.TFile(outFileName, "recreate")
     logString = ""
+    ROOT.gStyle.SetOptTitle(0)
+    ROOT.gStyle.SetPadTopMargin(0.05)
+    ROOT.gStyle.SetPadBottomMargin(0.13)
+    ROOT.gStyle.SetPadLeftMargin(0.16)
+    ROOT.gStyle.SetPadRightMargin(0.02)
     if logScale:
         canvas.SetLogy(True)
         logString = "_log"
@@ -37,25 +42,36 @@ def saveHistograms(histDict, canvas, outDir, imgType, logScale=False, doFit = Fa
             if item.GetEntries() == 0:
                 continue
         # write histogram to file
+        if type(item) == ROOT.TH2F or type(item) == ROOT.TH1F:
+            item.Sumw2()
         item.Write()
         if type(item) == ROOT.TH2F:
+            ROOT.gStyle.SetOptStat(0)
             item.Draw("colz")
+            item.GetYaxis().SetTitleOffset(1.5)
         else:
-            item.Draw()
+            ROOT.gStyle.SetOptStat("mr")
+            if type(item) == ROOT.TH1F:
+                item.Draw("hist")
+                item.GetYaxis().SetTitleOffset(1.5)
+            else:
+                item.Draw()
             if (doFit):
                 if key.find("delta") >= 0 and key.find("delta_R") < 0 and key.find("deltaover") < 0:
                     ROOT.gStyle.SetOptFit(1)
                     item.Fit("gaus")
+        if (item.GetYaxis().GetTitle() == ""):
+            item.GetYaxis().SetTitle("a.u.")
         canvas.SaveAs("{}/{}{}.{}".format(outDir, key, logString, imgType))
         if type(item) == ROOT.TH2F:
-            pX = item.ProjectionX("pX")
-            pX.Draw()
+            pjX = item.ProjectionX("pjX")
+            pjX.Draw()
             canvas.SaveAs("{}/{}{}_projectionX.{}".format(outDir, key, logString, imgType))
-            pX.Delete()
-            pY = item.ProjectionY("pY")
-            pY.Draw()
+            pjX.Delete()
+            pjY = item.ProjectionY("pjY")
+            pjY.Draw()
             canvas.SaveAs("{}/{}{}_projectionY.{}".format(outDir, key, logString, imgType))
-            pY.Delete()
+            pjY.Delete()
             pfX = item.ProfileX("pfX")
             pfX.Draw()
             canvas.SaveAs("{}/{}{}_profileX.{}".format(outDir, key, logString, imgType))

@@ -107,6 +107,8 @@ def getHists():
                 if (categ == "_relative"):
                     pTmax = 1
                     eMax = 1
+                histDict["%s_layers_energy_1D%s" % (clus, categ)] = ROOT.TH1F("%s_layers_energy_1D%s" % (clus, categ), "%s_layers_energy_1D%s;layers;" % (clus, categ), 53, 0.5, 53.5)
+                histDict["%s_layers_nHits%s" % (clus, categ)] = ROOT.TH1F("%s_layers_nHits%s" % (clus, categ), "%s_layers_nHits%s;layers;" % (clus, categ), 53, 0.5, 53.5)
                 histDict["%s_layers_energy%s" % (clus, categ)] = ROOT.TH2F("%s_layers_energy%s" % (clus, categ), "%s_layers_energy%s;layers;energy [GeV]" % (clus, categ), 53, 0.5, 53.5, 200, 0, eMax)
                 histDict["%s_layers_pt%s" % (clus, categ)] = ROOT.TH2F("%s_layers_pt%s" % (clus, categ), "%s_layers_pt%s;layers;p_{T} [GeV]" % (clus, categ), 53, 0.5, 53.5, 200, 0, pTmax)
                 histDict["%s_layers_delta_R%s" % (clus, categ)] = ROOT.TH2F("%s_layers_delta_R%s" % (clus, categ), "%s_layers_delta_R%s;layers;#Delta R" % (clus, categ), 53, 0.5, 53.5, 100, 0, 1)
@@ -162,8 +164,8 @@ def getHists():
                     histDict["%s_deltaover_pt_%s_%s" % (comp, detect, etaR)] = ROOT.TH1F("%s_deltaover_pt_%s_%s" % (comp, detect, etaR), "%s_deltaover_pt_%s_%s;#Delta p_{T}/p_{T}" % (comp, detect, etaR), 100, -1, 1)
                     histDict["%s_frac_energy_%s_%s" % (comp, detect, etaR)] = ROOT.TH1F("%s_frac_energy_%s_%s" % (comp, detect, etaR), "%s_frac_energy_%s_%s;E fraction" % (comp, detect, etaR), 100, 0, 2)
                     histDict["%s_frac_pt_%s_%s" % (comp, detect, etaR)] = ROOT.TH1F("%s_frac_pt_%s_%s" % (comp, detect, etaR), "%s_frac_pt_%s_%s;p_{T} fraction" % (comp, detect, etaR), 100, 0, 2)
-                    histDict["%s_frac_energy_EE_%s_%s" % (comp, detect, etaR)] = ROOT.TH2F("%s_frac_energy_EE_%s_%s" % (comp, detect, etaR), "%s_frac_energy_EE_%s_%s;E fraction EE;E fraction %s" % (comp, detect, etaR, detect), 100, 0, 2, 100, 0, 2)
-                    histDict["%s_frac_pt_EE_%s_%s" % (comp, detect, etaR)] = ROOT.TH2F("%s_frac_pt_EE_%s_%s" % (comp, detect, etaR), "%s_frac_pt_EE_%s_%s;p_{T} fraction EE;p_{T} fraction %s" % (comp, detect, etaR, detect), 100, 0, 2, 100, 0, 2)
+                    histDict["%s_frac_energy_EE_%s_%s" % (comp, detect, etaR)] = ROOT.TH2F("%s_frac_energy_EE_%s_%s" % (comp, detect, etaR), "%s_frac_energy_EE_%s_%s;E fraction EE;E fraction %s" % (comp, detect, etaR, detect), 50, 0, 1.4, 50, 0, 1.4)
+                    histDict["%s_frac_pt_EE_%s_%s" % (comp, detect, etaR)] = ROOT.TH2F("%s_frac_pt_EE_%s_%s" % (comp, detect, etaR), "%s_frac_pt_EE_%s_%s;p_{T} fraction EE;p_{T} fraction %s" % (comp, detect, etaR, detect), 50, 0, 1.4, 50, 0, 1.4)
                     histDict["%s_frac_energy_eta_%s_%s" % (comp, detect, etaR)] = ROOT.TH2F("%s_frac_energy_eta_%s_%s" % (comp, detect, etaR), "%s_frac_energy_eta_%s_%s;E fraction;RecHits cluster #eta" % (comp, detect, etaR), 100, 0, 2, 100, -5, 5)
                     histDict["%s_frac_pt_eta_%s_%s" % (comp, detect, etaR)] = ROOT.TH2F("%s_frac_pt_eta_%s_%s" % (comp, detect, etaR), "%s_frac_pt_eta_%s_%s;p_{T} fraction;RecHits cluster #eta" % (comp, detect, etaR), 100, 0, 2, 100, -5, 5)
 
@@ -175,12 +177,17 @@ def main():
     localTest = False
     nEvents = -1
     # dvzCut = -1000  # 320
-    simClusPtCut = 4 # 28 for 35, 16 for 20 sample
+    simClusPtCuts = {}
+    simClusPtCuts["chargedPions_nPart1_Pt5_pre15"] = 4
+    simClusPtCuts["chargedPions_nPart1_Pt10_pre15"] = 8
+    simClusPtCuts["chargedPions_nPart1_Pt20_pre15"] = 16
+    simClusPtCuts["chargedPions_nPart1_Pt35_pre15"] = 28
     imgType = "pdf"
     applyRecHitsRelPtCut = True
     maxLayer = 53
-    sampleName = "chargedPions_nPart1_Pt5_pre15"
+    sampleName = "chargedPions_nPart1_Pt20_pre15"
     outDir = sampleName
+    simClusPtCut = simClusPtCuts[sampleName]
     if not applyRecHitsRelPtCut:
         outDir = "singlePions_noRelPtCut"
 
@@ -267,6 +274,8 @@ def main():
                         allRecHits.append(event.rechits_raw[hitIndex])
                         # print thisHit.energy
                         histDict["RecHits_layers_energy"].Fill(thisHit.layer, thisHit.energy)
+                        histDict["RecHits_layers_energy_1D"].Fill(thisHit.layer, thisHit.energy)
+                        histDict["RecHits_layers_nHits"].Fill(thisHit.layer)
                         histDict["RecHits_layers_pt"].Fill(thisHit.layer, thisHit.pt)
                         recHitTLV = ROOT.TLorentzVector()
                         recHitTLV.SetPtEtaPhiE(thisHit.pt, thisHit.eta, thisHit.phi, thisHit.energy)
@@ -300,6 +309,7 @@ def main():
                         recHitClusTot_energy += recHitVectorsLayer[layer].E()
                         recHitClusTot_pt += recHitVectorsLayer[layer].Pt()
                         histDict["RecHitsClus_layers_energy"].Fill(layer, recHitVectorsLayer[layer].E())
+                        histDict["RecHitsClus_layers_energy_1D"].Fill(layer, recHitVectorsLayer[layer].E())
                         histDict["RecHitsClus_layers_pt"].Fill(layer, recHitVectorsLayer[layer].Pt())
                         histDict["RecHitsClus_layers_delta_eta"].Fill(layer, recHitVectorsLayer[layer].Eta() - simCl.eta)
                         histDict["RecHitsClus_layers_delta_phi"].Fill(layer, recHitVectorsLayer[layer].Phi() - simCl.phi)
@@ -307,6 +317,8 @@ def main():
                     histDict["RecHitsClus_layers_energy_relative"].Fill(layer, recHitVectorsLayer[layer].E()/recHitVectors["all"].E())
                     histDict["RecHitsClus_layers_pt_relative"].Fill(layer, recHitVectorsLayer[layer].Pt()/recHitVectors["all"].Pt())
                     histDict["RecHitsClus_layers_energy_cumulative"].Fill(layer, recHitClusTot_energy/simCl.energy)
+                    histDict["RecHitsClus_layers_energy_1D_cumulative"].Fill(layer, recHitClusTot_energy/simCl.energy)
+                    histDict["RecHitsClus_layers_energy_1D_relative"].Fill(layer, recHitVectorsLayer[layer].E()/simCl.energy)
                     histDict["RecHitsClus_layers_pt_cumulative"].Fill(layer, recHitClusTot_pt/simCl.pt)
                     # histDict["RecHitsClus_layers_eta_cumulative"].Fill(layer, recHitClusTot_eta/simCl.eta)
                 # histDict["SimVsRecHits_delta_R"].Fill(HGCalHelpers.deltaR(simCl, recHitVector))
