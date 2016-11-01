@@ -39,9 +39,13 @@ def main():
 
     histList1D = ["RecHitsClus_layers_energy_1D_cumulative",
                   "RecHitsClus_layers_energy_1D_relative",
+                  "RecHitsClus_layers_energy_plain_1D_cumulative",
+                  "RecHitsClus_layers_energy_plain_1D_relative",
                   "RecHits_layers_energy_1D",
                   "RecHits_layers_nHits",
-                  "SimVsRecHits_frac_energy_EE_fullEta"]
+                  "SimVsRecHits_frac_energy_EE_fullEta",
+                  "SimVsRecHits_frac_energy_BH_fullEta",
+                  "SimClus_pt"]
 
     histYTitles = {}
     histYTitles["RecHitsClus_layers_energy_cumulative"] = "cumulative sum of RecHits energy deposits/SimCluster energy"
@@ -50,13 +54,19 @@ def main():
     histYTitles["SimVsRecHits_frac_energy_EE_FH+BH_fullEta"] = "events"
     histYTitles["RecHitsClus_layers_energy_1D_cumulative"] = "cumulative relative RecHits/SimCluster energy deposits"
     histYTitles["RecHitsClus_layers_energy_1D_relative"] = "relative RecHits/SimCluster energy deposits per layer"
+    histYTitles["RecHitsClus_layers_energy_plain_1D_cumulative"] = "cumulative relative RecHits/SimCluster energy deposits"
+    histYTitles["RecHitsClus_layers_energy_plain_1D_relative"] = "relative RecHits/SimCluster energy deposits per layer"
     histYTitles["RecHits_layers_energy_1D"] = "RecHits energy deposits [a.u.]"
     histYTitles["RecHits_layers_nHits"] = "RecHits number of hits [a.u.]"
     histYTitles["SimVsRecHits_frac_energy_EE_fullEta"] = "events"
+    histYTitles["SimVsRecHits_frac_energy_BH_fullEta"] = "events"
+    histYTitles["SimClus_pt"] = "entries"
 
     histXTitles = {}
     histXTitles["SimVsRecHits_frac_energy_EE_fullEta"] = "summed RecHits energy fraction EE"
+    histXTitles["SimVsRecHits_frac_energy_BH_fullEta"] = "summed RecHits energy fraction BH"
     histXTitles["SimVsRecHits_frac_energy_EE_FH+BH_fullEta"] = "summed RecHits energy fraction EE vs. FH+BH"
+    histXTitles["SimClus_pt"] = "SimCluster p_{T} [GeV]"
 
     fileDict = {}
     for sampleName in samples2plot:

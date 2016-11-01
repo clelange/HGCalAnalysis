@@ -64,6 +64,7 @@ def saveHistograms(histDict, canvas, outDir, imgType, logScale=False, doFit = Fa
             item.GetYaxis().SetTitle("a.u.")
         canvas.SaveAs("{}/{}{}.{}".format(outDir, key, logString, imgType))
         if type(item) == ROOT.TH2F:
+            ROOT.gStyle.SetOptStat("mr")
             pjX = item.ProjectionX("pjX")
             pjX.Draw()
             canvas.SaveAs("{}/{}{}_projectionX.{}".format(outDir, key, logString, imgType))

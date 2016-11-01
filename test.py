@@ -4,6 +4,7 @@ import ROOT
 import logging
 import numpy as np
 import HGCalHelpers
+from multiprocessing import Process
 
 
 class RecHit(object):
@@ -18,12 +19,14 @@ class RecHit(object):
         tlv.SetPtEtaPhiE(self.rechit.pt, self.rechit.eta, self.rechit.phi, self.rechit.energy)
         return tlv
 
+
 class RecHitCollection(object):
-    def __init__(self, rechitList = []):
+    def __init__(self, rechitList=[]):
         self.rechits = deepcopy(rechitList)
 
     def addRecHit(rechit):
         self.rechits.append(rechit)
+
 
 def getRecHitDetIds(rechits):
     recHitsList = []
@@ -108,6 +111,7 @@ def getHists():
                     pTmax = 1
                     eMax = 1
                 histDict["%s_layers_energy_1D%s" % (clus, categ)] = ROOT.TH1F("%s_layers_energy_1D%s" % (clus, categ), "%s_layers_energy_1D%s;layers;" % (clus, categ), 53, 0.5, 53.5)
+                histDict["%s_layers_energy_plain_1D%s" % (clus, categ)] = ROOT.TH1F("%s_layers_energy_plain_1D%s" % (clus, categ), "%s_layers_energy_plain_1D%s;layers;" % (clus, categ), 53, 0.5, 53.5)
                 histDict["%s_layers_nHits%s" % (clus, categ)] = ROOT.TH1F("%s_layers_nHits%s" % (clus, categ), "%s_layers_nHits%s;layers;" % (clus, categ), 53, 0.5, 53.5)
                 histDict["%s_layers_energy%s" % (clus, categ)] = ROOT.TH2F("%s_layers_energy%s" % (clus, categ), "%s_layers_energy%s;layers;energy [GeV]" % (clus, categ), 53, 0.5, 53.5, 200, 0, eMax)
                 histDict["%s_layers_pt%s" % (clus, categ)] = ROOT.TH2F("%s_layers_pt%s" % (clus, categ), "%s_layers_pt%s;layers;p_{T} [GeV]" % (clus, categ), 53, 0.5, 53.5, 200, 0, pTmax)
@@ -168,42 +172,12 @@ def getHists():
                     histDict["%s_frac_pt_EE_%s_%s" % (comp, detect, etaR)] = ROOT.TH2F("%s_frac_pt_EE_%s_%s" % (comp, detect, etaR), "%s_frac_pt_EE_%s_%s;p_{T} fraction EE;p_{T} fraction %s" % (comp, detect, etaR, detect), 50, 0, 1.4, 50, 0, 1.4)
                     histDict["%s_frac_energy_eta_%s_%s" % (comp, detect, etaR)] = ROOT.TH2F("%s_frac_energy_eta_%s_%s" % (comp, detect, etaR), "%s_frac_energy_eta_%s_%s;E fraction;RecHits cluster #eta" % (comp, detect, etaR), 100, 0, 2, 100, -5, 5)
                     histDict["%s_frac_pt_eta_%s_%s" % (comp, detect, etaR)] = ROOT.TH2F("%s_frac_pt_eta_%s_%s" % (comp, detect, etaR), "%s_frac_pt_eta_%s_%s;p_{T} fraction;RecHits cluster #eta" % (comp, detect, etaR), 100, 0, 2, 100, -5, 5)
+                    histDict["%s_frac_energy_delta_energy_%s_%s" % (comp, detect, etaR)] = ROOT.TH2F("%s_frac_energy_delta_energy_%s_%s" % (comp, detect, etaR), "%s_frac_energy_delta_energy_%s_%s;E fraction %s;#Delta E/E" % (comp, detect, etaR, detect), 50, 0, 1.4, 50, -1, 1)
 
     return histDict
 
 
-def main():
-
-    localTest = False
-    nEvents = -1
-    # dvzCut = -1000  # 320
-    simClusPtCuts = {}
-    simClusPtCuts["chargedPions_nPart1_Pt5_pre15"] = 4
-    simClusPtCuts["chargedPions_nPart1_Pt10_pre15"] = 8
-    simClusPtCuts["chargedPions_nPart1_Pt20_pre15"] = 16
-    simClusPtCuts["chargedPions_nPart1_Pt35_pre15"] = 28
-    imgType = "pdf"
-    applyRecHitsRelPtCut = True
-    maxLayer = 53
-    sampleName = "chargedPions_nPart1_Pt20_pre15"
-    outDir = sampleName
-    simClusPtCut = simClusPtCuts[sampleName]
-    if not applyRecHitsRelPtCut:
-        outDir = "singlePions_noRelPtCut"
-
-    logger = logging.getLogger()
-    logger.setLevel(logging.INFO)
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.DEBUG)
-    formatter = logging.Formatter('%(message)s')
-    ch.setFormatter(formatter)
-
-    sampleManager = SampleManager()
-    sample = sampleManager.getSample(sampleName)
-    chain = sample.getChain()
-    if localTest:
-        inFile = ROOT.TFile.Open("/afs/cern.ch/user/c/clange/work/HGCal/ntupliser/CMSSW_8_1_0_pre8/src/RecoNtuples/HGCalAnalysis/test/twogamma_pt5_eta2_nosmear_calib_ntuple.root")
-        chain = inFile.Get("ana/hgc")
+def processSample(chain, nEvents, outDir, maxLayer, applyRecHitsRelPtCut, simClusPtCut, imgType, logger):
 
     HGCalHelpers.createOutputDir(outDir)
     histDict = getHists()
@@ -263,10 +237,14 @@ def main():
                 histDict["SimClus_phi_pass"].Fill(simCl.phi)
                 recHitVectors = {}
                 recHitVectorsLayer = {}
+                recHitEsum_plain = {}
                 for detect in detectors:
                     recHitVectors[detect] = ROOT.TLorentzVector()
+                    recHitEsum_plain[detect] = 0
                 for layer in range(1, maxLayer):
                     recHitVectorsLayer[layer] = ROOT.TLorentzVector()
+                    recHitEsum_plain[layer] = 0
+                    # recHitEsumLayerCumulative[layer] = 0
                 allRecHits = []
                 for hitIndexArray in simClusHitAssoc[simClusIndex]:
                     for hitIndex in hitIndexArray:
@@ -281,14 +259,21 @@ def main():
                         recHitTLV.SetPtEtaPhiE(thisHit.pt, thisHit.eta, thisHit.phi, thisHit.energy)
                         recHitVectors["all"] += recHitTLV
                         recHitVectorsLayer[thisHit.layer] += recHitTLV
+                        recHitEsum_plain[thisHit.layer] += thisHit.energy
+                        recHitEsum_plain["all"] += thisHit.energy
                         if (thisHit.layer < 29):
                             recHitVectors["EE"] += recHitTLV
+                            recHitEsum_plain["EE"] += thisHit.energy
                         elif (thisHit.layer < 41):
                             recHitVectors["FH"] += recHitTLV
                             recHitVectors["FH+BH"] += recHitTLV
+                            recHitEsum_plain["FH"] += thisHit.energy
+                            recHitEsum_plain["FH+BH"] += thisHit.energy
                         else:
                             recHitVectors["BH"] += recHitTLV
                             recHitVectors["FH+BH"] += recHitTLV
+                            recHitEsum_plain["BH"] += thisHit.energy
+                            recHitEsum_plain["FH+BH"] += thisHit.energy
                 logger.debug("SimCluster pt, E: {}, {} - RecHitVector pt, E: {}, {}".format(simCl.pt, simCl.energy, recHitVectors["all"].Pt(), recHitVectors["all"].E()))
                 (xPosWeighted, yPosWeighted) = getXYWeighted(allRecHits, 30)
                 # relative pT cut to clean up misreconstructed particles
@@ -303,8 +288,10 @@ def main():
                 histDict["SimVsRecHits_delta_eta"].Fill(simCl.eta-recHitVectors["all"].Eta())
                 histDict["SimVsRecHits_delta_phi"].Fill(simCl.phi-recHitVectors["all"].Phi())
                 recHitClusTot_energy = 0
+                recHitLayer_energy_plain_cumulative = 0
                 recHitClusTot_pt = 0
                 for layer in range(1, maxLayer):
+                    recHitLayer_energy_plain_cumulative += recHitEsum_plain[layer]
                     if (recHitVectorsLayer[layer].E() > 0):
                         recHitClusTot_energy += recHitVectorsLayer[layer].E()
                         recHitClusTot_pt += recHitVectorsLayer[layer].Pt()
@@ -319,6 +306,8 @@ def main():
                     histDict["RecHitsClus_layers_energy_cumulative"].Fill(layer, recHitClusTot_energy/simCl.energy)
                     histDict["RecHitsClus_layers_energy_1D_cumulative"].Fill(layer, recHitClusTot_energy/simCl.energy)
                     histDict["RecHitsClus_layers_energy_1D_relative"].Fill(layer, recHitVectorsLayer[layer].E()/simCl.energy)
+                    histDict["RecHitsClus_layers_energy_plain_1D_cumulative"].Fill(layer, recHitLayer_energy_plain_cumulative/simCl.energy)
+                    histDict["RecHitsClus_layers_energy_plain_1D_relative"].Fill(layer, recHitEsum_plain[layer]/simCl.energy)
                     histDict["RecHitsClus_layers_pt_cumulative"].Fill(layer, recHitClusTot_pt/simCl.pt)
                     # histDict["RecHitsClus_layers_eta_cumulative"].Fill(layer, recHitClusTot_eta/simCl.eta)
                 # histDict["SimVsRecHits_delta_R"].Fill(HGCalHelpers.deltaR(simCl, recHitVector))
@@ -335,6 +324,8 @@ def main():
                     histDict["SimVsRecHits_frac_pt_EE_%s_%s" % (detect, etaR)].Fill(recHitVectors["EE"].Pt()/simCl.pt, recHitVectors[detect].Pt()/simCl.pt)
                     histDict["SimVsRecHits_frac_energy_eta_%s_%s" % (detect, etaR)].Fill(recHitVectors[detect].E()/simCl.energy, recHitVectors[detect].Eta())
                     histDict["SimVsRecHits_frac_pt_eta_%s_%s" % (detect, etaR)].Fill(recHitVectors[detect].Pt()/simCl.pt, recHitVectors[detect].Eta())
+                    # recHitLayer_energy_plain_cumulative is now the total energy
+                    histDict["SimVsRecHits_frac_energy_delta_energy_%s_%s" % (detect, etaR)].Fill(recHitEsum_plain[detect]/simCl.energy, (simCl.energy - recHitLayer_energy_plain_cumulative)/simCl.energy)
                     if (abs(simCl.eta) <= 1.95):
                         etaR = "1p70_1p95"
                     elif (abs(simCl.eta) <= 2.2):
@@ -365,6 +356,55 @@ def main():
             # divide by number of selected SimClusters/events
             item.Scale(1./selectedEvents)
     HGCalHelpers.saveHistograms(histDict, canvas, outDir, imgType, logScale=False)
+
+
+def main():
+
+    localTest = False
+    nEvents = -1
+    # dvzCut = -1000  # 320
+    simClusPtCuts = {}
+    simClusPtCuts["chargedPions_nPart1_Pt5_pre15"] = 4
+    simClusPtCuts["chargedPions_nPart1_Pt10_pre15"] = 8
+    simClusPtCuts["chargedPions_nPart1_Pt20_pre15"] = 16
+    simClusPtCuts["chargedPions_nPart1_Pt35_pre15"] = 28
+    imgType = "pdf"
+    applyRecHitsRelPtCut = True
+    maxLayer = 53
+    samples2Run = ["chargedPions_nPart1_Pt5_pre15", "chargedPions_nPart1_Pt10_pre15",
+                   "chargedPions_nPart1_Pt20_pre15", "chargedPions_nPart1_Pt35_pre15"
+                  ]
+
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.DEBUG)
+    formatter = logging.Formatter('%(message)s')
+    ch.setFormatter(formatter)
+
+    sampleManager = SampleManager()
+    if localTest:
+        inFile = ROOT.TFile.Open("/afs/cern.ch/user/c/clange/work/HGCal/ntupliser/CMSSW_8_1_0_pre8/src/RecoNtuples/HGCalAnalysis/test/twogamma_pt5_eta2_nosmear_calib_ntuple.root")
+        chain = inFile.Get("ana/hgc")
+
+    # processSample(chain, nEvents, outDir, maxLayer, applyRecHitsRelPtCut, simClusPtCut, imgType, logger)
+    jobs = []
+    for sampleName in samples2Run:
+        # sampleName = "chargedPions_nPart1_Pt20_pre15"
+        outDir = sampleName
+        simClusPtCut = simClusPtCuts[sampleName]
+        sample = sampleManager.getSample(sampleName)
+        chain = sample.getChain()
+        logger.info("Submitting %s" % sampleName)
+        process = Process(target=processSample, args=(chain, nEvents, outDir, maxLayer, applyRecHitsRelPtCut, simClusPtCut, imgType, logger))
+        jobs.append(process)
+
+    for j in jobs:
+		j.start()
+
+    # Ensure all of the processes have finished
+    for j in jobs:
+    	j.join()
 
 
 if __name__ == '__main__':
