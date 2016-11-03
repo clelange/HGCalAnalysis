@@ -325,7 +325,7 @@ def processSample(chain, nEvents, outDir, maxLayer, applyRecHitsRelPtCut, simClu
                     histDict["SimVsRecHits_frac_energy_eta_%s_%s" % (detect, etaR)].Fill(recHitVectors[detect].E()/simCl.energy, recHitVectors[detect].Eta())
                     histDict["SimVsRecHits_frac_pt_eta_%s_%s" % (detect, etaR)].Fill(recHitVectors[detect].Pt()/simCl.pt, recHitVectors[detect].Eta())
                     # recHitLayer_energy_plain_cumulative is now the total energy
-                    histDict["SimVsRecHits_frac_energy_delta_energy_%s_%s" % (detect, etaR)].Fill(recHitEsum_plain[detect]/simCl.energy, (simCl.energy - recHitLayer_energy_plain_cumulative)/simCl.energy)
+                    histDict["SimVsRecHits_frac_energy_delta_energy_%s_%s" % (detect, etaR)].Fill(recHitEsum_plain[detect]/simCl.energy, (recHitLayer_energy_plain_cumulative - simCl.energy)/simCl.energy)
                     if (abs(simCl.eta) <= 1.95):
                         etaR = "1p70_1p95"
                     elif (abs(simCl.eta) <= 2.2):
@@ -364,15 +364,18 @@ def main():
     nEvents = -1
     # dvzCut = -1000  # 320
     simClusPtCuts = {}
-    simClusPtCuts["chargedPions_nPart1_Pt5_pre15"] = 4
-    simClusPtCuts["chargedPions_nPart1_Pt10_pre15"] = 8
-    simClusPtCuts["chargedPions_nPart1_Pt20_pre15"] = 16
-    simClusPtCuts["chargedPions_nPart1_Pt35_pre15"] = 28
+    simClusPtCuts["chargedPions_nPart1_Pt2_pre15_5k"] = 1.6
+    simClusPtCuts["chargedPions_nPart1_Pt5_pre15_5k"] = 4
+    simClusPtCuts["chargedPions_nPart1_Pt10_pre15_5k"] = 8
+    simClusPtCuts["chargedPions_nPart1_Pt20_pre15_5k"] = 16
+    simClusPtCuts["chargedPions_nPart1_Pt35_pre15_5k"] = 28
+    simClusPtCuts["chargedPions_nPart1_Pt200_pre15_5k"] = 160
     imgType = "pdf"
     applyRecHitsRelPtCut = True
     maxLayer = 53
-    samples2Run = ["chargedPions_nPart1_Pt5_pre15", "chargedPions_nPart1_Pt10_pre15",
-                   "chargedPions_nPart1_Pt20_pre15", "chargedPions_nPart1_Pt35_pre15"
+    samples2Run = ["chargedPions_nPart1_Pt2_pre15_5k", "chargedPions_nPart1_Pt200_pre15_5k",
+                   "chargedPions_nPart1_Pt5_pre15_5k", "chargedPions_nPart1_Pt10_pre15_5k",
+                   "chargedPions_nPart1_Pt20_pre15_5k", "chargedPions_nPart1_Pt35_pre15_5k"
                   ]
 
     logger = logging.getLogger()

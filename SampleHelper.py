@@ -124,6 +124,19 @@ class SampleManager(object):
             "chargedPions_nPart1_Pt20_pre15", "partGun_predragm_PDGid211_nPart1_Pt20_pre15_20161024")
         sampleDict["chargedPions_nPart1_Pt35_pre15"] = Sample(
             "chargedPions_nPart1_Pt35_pre15", "partGun_predragm_PDGid211_nPart1_Pt35_pre15_20161024")
+        # 5k events charged pion samples
+        sampleDict["chargedPions_nPart1_Pt2_pre15_5k"] = Sample(
+            "chargedPions_nPart1_Pt2_pre15_5k", "partGun_clange_PDGid211_nPart1_Pt2_20161102")
+        sampleDict["chargedPions_nPart1_Pt5_pre15_5k"] = Sample(
+            "chargedPions_nPart1_Pt5_pre15_5k", "partGun_clange_PDGid211_nPart1_Pt5_20161102")
+        sampleDict["chargedPions_nPart1_Pt10_pre15_5k"] = Sample(
+            "chargedPions_nPart1_Pt10_pre15_5k", "partGun_clange_PDGid211_nPart1_Pt10_20161102")
+        sampleDict["chargedPions_nPart1_Pt20_pre15_5k"] = Sample(
+            "chargedPions_nPart1_Pt20_pre15_5k", "partGun_clange_PDGid211_nPart1_Pt20_20161102")
+        sampleDict["chargedPions_nPart1_Pt35_pre15_5k"] = Sample(
+            "chargedPions_nPart1_Pt35_pre15_5k", "partGun_clange_PDGid211_nPart1_Pt35_20161102")
+        sampleDict["chargedPions_nPart1_Pt200_pre15_5k"] = Sample(
+            "chargedPions_nPart1_Pt200_pre15_5k", "partGun_clange_PDGid211_nPart1_Pt200_20161102")
         return sampleDict
 
     def getSample(self, sampleName):
