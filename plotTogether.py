@@ -2,10 +2,13 @@ import ROOT
 # import logging
 
 def main():
-    samples2plot = ["chargedPions_nPart1_Pt5_pre15",
-                    "chargedPions_nPart1_Pt10_pre15",
-                    "chargedPions_nPart1_Pt20_pre15",
-                    "chargedPions_nPart1_Pt35_pre15"]
+    samples2plot = ["chargedPions_nPart1_Pt2_pre15_5k",
+                    "chargedPions_nPart1_Pt5_pre15_5k",
+                    # "chargedPions_nPart1_Pt10_pre15_5k",
+                    # "chargedPions_nPart1_Pt20_pre15_5k",
+                    "chargedPions_nPart1_Pt35_pre15_5k",
+                    "chargedPions_nPart1_Pt200_pre15_5k"
+                    ]
 
     colourBlindColours = {}
     colourBlindColours[0] = ROOT.TColor(10000, 0, 0.4470588235, 0.6980392157)
@@ -15,22 +18,22 @@ def main():
     colourBlindColours[4] = ROOT.TColor(10004, 0.8352941176, 0.368627451, 0)
 
     sampleColours = {}
-    sampleColours["chargedPions_nPart1_Pt5_pre15"] = 10000
-    sampleColours["chargedPions_nPart1_Pt10_pre15"] = 10001
-    sampleColours["chargedPions_nPart1_Pt20_pre15"] = 10002
-    sampleColours["chargedPions_nPart1_Pt35_pre15"] = 10003
+    sampleColours["chargedPions_nPart1_Pt2_pre15_5k"] = 10000
+    sampleColours["chargedPions_nPart1_Pt5_pre15_5k"] = 10001
+    sampleColours["chargedPions_nPart1_Pt35_pre15_5k"] = 10002
+    sampleColours["chargedPions_nPart1_Pt200_pre15_5k"] = 10003
 
     sampleMarkerStyle = {}
-    sampleMarkerStyle["chargedPions_nPart1_Pt5_pre15"] = 20
-    sampleMarkerStyle["chargedPions_nPart1_Pt10_pre15"] = 21
-    sampleMarkerStyle["chargedPions_nPart1_Pt20_pre15"] = 22
-    sampleMarkerStyle["chargedPions_nPart1_Pt35_pre15"] = 23
+    sampleMarkerStyle["chargedPions_nPart1_Pt2_pre15_5k"] = 20
+    sampleMarkerStyle["chargedPions_nPart1_Pt5_pre15_5k"] = 21
+    sampleMarkerStyle["chargedPions_nPart1_Pt35_pre15_5k"] = 22
+    sampleMarkerStyle["chargedPions_nPart1_Pt200_pre15_5k"] = 23
 
     sampleLabels = {}
-    sampleLabels["chargedPions_nPart1_Pt5_pre15"] = "p_{T} = 5 GeV"
-    sampleLabels["chargedPions_nPart1_Pt10_pre15"] = "p_{T} = 10 GeV"
-    sampleLabels["chargedPions_nPart1_Pt20_pre15"] = "p_{T} = 20 GeV"
-    sampleLabels["chargedPions_nPart1_Pt35_pre15"] = "p_{T} = 35 GeV"
+    sampleLabels["chargedPions_nPart1_Pt2_pre15_5k"] = "p_{T} = 2 GeV"
+    sampleLabels["chargedPions_nPart1_Pt5_pre15_5k"] = "p_{T} = 5 GeV"
+    sampleLabels["chargedPions_nPart1_Pt35_pre15_5k"] = "p_{T} = 35 GeV"
+    sampleLabels["chargedPions_nPart1_Pt200_pre15_5k"] = "p_{T} = 200 GeV"
 
     histList2D = ["RecHitsClus_layers_energy_cumulative",
                   "RecHitsClus_layers_energy_relative",
@@ -45,6 +48,8 @@ def main():
                   "RecHits_layers_nHits",
                   "SimVsRecHits_frac_energy_EE_fullEta",
                   "SimVsRecHits_frac_energy_BH_fullEta",
+                  "SimVsRecHits_frac_energy_BH_fullEta_fracEvents_1D",
+                  "SimVsRecHits_frac_energy_BH_fullEta_fracEvents_1D_cumulative",
                   "SimClus_pt"]
 
     histYTitles = {}
@@ -60,11 +65,15 @@ def main():
     histYTitles["RecHits_layers_nHits"] = "RecHits number of hits [a.u.]"
     histYTitles["SimVsRecHits_frac_energy_EE_fullEta"] = "events"
     histYTitles["SimVsRecHits_frac_energy_BH_fullEta"] = "events"
+    histYTitles["SimVsRecHits_frac_energy_BH_fullEta_fracEvents_1D"] = "fraction of events"
+    histYTitles["SimVsRecHits_frac_energy_BH_fullEta_fracEvents_1D_cumulative"] = "cumulative fraction of events"
     histYTitles["SimClus_pt"] = "entries"
 
     histXTitles = {}
     histXTitles["SimVsRecHits_frac_energy_EE_fullEta"] = "summed RecHits energy fraction EE"
     histXTitles["SimVsRecHits_frac_energy_BH_fullEta"] = "summed RecHits energy fraction BH"
+    histXTitles["SimVsRecHits_frac_energy_BH_fullEta_fracEvents_1D"] = "summed RecHits energy fraction BH"
+    histXTitles["SimVsRecHits_frac_energy_BH_fullEta_fracEvents_1D_cumulative"] = "summed RecHits energy fraction BH"
     histXTitles["SimVsRecHits_frac_energy_EE_FH+BH_fullEta"] = "summed RecHits energy fraction EE vs. FH+BH"
     histXTitles["SimClus_pt"] = "SimCluster p_{T} [GeV]"
 
