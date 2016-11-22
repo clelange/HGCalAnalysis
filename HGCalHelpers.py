@@ -305,14 +305,20 @@ class Geometry(object):
         """return absolute X value."""
         z = self.layerToZ(layer, eta)
         t = math.exp(-1. * eta)
-        x = z * 2 * t * math.cos(phi)/(1 - t*t)
+        if (t == 1):
+            x = 0
+        else:
+            x = z * 2 * t * math.cos(phi)/(1 - t*t)
         return x
 
     def layerEtaPhiToY(self, layer, eta, phi):
         """return absolute Y value."""
         z = self.layerToZ(layer, eta)
         t = math.exp(-1. * eta)
-        y = z * 2 * t * math.sin(phi)/(1 - t*t)
+        if (t == 1):
+            y = 0
+        else:
+            y = z * 2 * t * math.sin(phi)/(1 - t*t)
         return y
 
 
