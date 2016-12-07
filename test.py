@@ -1,11 +1,14 @@
 """investigate shower development based on RecHits and SimClusters."""
-from SampleHelper import SampleManager
+from SampleHelper import SampleManager, Sample
 import ROOT
 import logging
 import numpy as np
 import HGCalHelpers
 from multiprocessing import Process
 import copy
+import optparse
+import math
+import os
 
 
 class RecHit(object):
@@ -131,9 +134,14 @@ def getHists():
                 histDict["%s_layers_delta_eta%s" % (clus, categ)] = ROOT.TH2F("%s_layers_delta_eta%s" % (clus, categ), "%s_layers_delta_eta%s;layers;#Delta #eta" % (clus, categ), 53, 0.5, 53.5, 100, -0.5, 0.5)
                 histDict["%s_layers_delta_phi%s" % (clus, categ)] = ROOT.TH2F("%s_layers_delta_phi%s" % (clus, categ), "%s_layers_delta_phi%s;layers;#Delta #phi" % (clus, categ), 53, 0.5, 53.5, 100, -0.5, 0.5)
                 # lateral shower plots
-                histDict["%s_layers_delta_x%s" % (clus, categ)] = ROOT.TH2F("%s_layers_delta_x%s" % (clus, categ), "%s_layers_delta_x%s;layers;#Delta x [mm]" % (clus, categ), 53, 0.5, 53.5, 100, -500, 500)
-                histDict["%s_layers_delta_y%s" % (clus, categ)] = ROOT.TH2F("%s_layers_delta_y%s" % (clus, categ), "%s_layers_delta_y%s;layers;#Delta y [mm]" % (clus, categ), 53, 0.5, 53.5, 100, -500, 500)
-                histDict["%s_layers_delta_d%s" % (clus, categ)] = ROOT.TH2F("%s_layers_delta_d%s" % (clus, categ), "%s_layers_delta_d%s;layers;#Delta d [mm]" % (clus, categ), 53, 0.5, 53.5, 100, 0, 1000)
+                lateralReferences = ["", "_RecHitsClusMaxLayer", "_RecHitsClusFirstLayer", "_SimCluster"]
+                for refKey in lateralReferences:
+                    histDict["%s_layers_delta_x%s%s" % (clus, refKey, categ)] = ROOT.TH2F("%s_layers_delta_x%s%s" % (clus, refKey, categ), "%s_layers_delta_x%s%s;layers;#Delta x [mm]" % (clus, refKey, categ), 53, 0.5, 53.5, 100, -500, 500)
+                    histDict["%s_layers_delta_y%s%s" % (clus, refKey, categ)] = ROOT.TH2F("%s_layers_delta_y%s%s" % (clus, refKey, categ), "%s_layers_delta_y%s%s;layers;#Delta y [mm]" % (clus, refKey, categ), 53, 0.5, 53.5, 100, -500, 500)
+                    histDict["%s_layers_delta_d%s%s" % (clus, refKey, categ)] = ROOT.TH2F("%s_layers_delta_d%s%s" % (clus, refKey, categ), "%s_layers_delta_d%s%s;layers;#Delta d [mm]" % (clus, refKey, categ), 53, 0.5, 53.5, 100, 0, 1000)
+                    histDict["%s_layers_delta_x_eWeight%s%s" % (clus, refKey, categ)] = ROOT.TH2F("%s_layers_delta_x_eWeight%s%s" % (clus, refKey, categ), "%s_layers_delta_x_eWeight%s%s;layers;#Delta x [mm]" % (clus, refKey, categ), 53, 0.5, 53.5, 100, -500, 500)
+                    histDict["%s_layers_delta_y_eWeight%s%s" % (clus, refKey, categ)] = ROOT.TH2F("%s_layers_delta_y_eWeight%s%s" % (clus, refKey, categ), "%s_layers_delta_y_eWeight%s%s;layers;#Delta y [mm]" % (clus, refKey, categ), 53, 0.5, 53.5, 100, -500, 500)
+                    histDict["%s_layers_delta_d_eWeight%s%s" % (clus, refKey, categ)] = ROOT.TH2F("%s_layers_delta_d_eWeight%s%s" % (clus, refKey, categ), "%s_layers_delta_d_eWeight%s%s;layers;#Delta d [mm]" % (clus, refKey, categ), 53, 0.5, 53.5, 100, 0, 1000)
 
         histDict["%s_dRtoSeed" % clus] = ROOT.TH1F(
             "%s_dRtoSeed" % clus, "%s_dRtoSeed;#Delta R to seed" % clus, 100, -0.2, 0.2)
@@ -197,15 +205,20 @@ def getHists():
             histDict["SimVsRecHits_radius_frac_energy_%s_%s" % (refKey, detect)] = ROOT.TH1F("SimVsRecHits_radius_frac_energy_%s_%s" % (refKey, detect), "SimVsRecHits_radius_frac_energy_%s_%s;radius [mm];E fraction (%s)" % (refKey, detect, detect), 100, -2.5, 497.5)
             # also make plots relative to RecHitCluster sum in a subdetector
             histDict["RecHitsClusVsRecHits_radius_frac_energy_%s_%s" % (refKey, detect)] = ROOT.TH1F("RecHitsClusVsRecHits_radius_frac_energy_%s_%s" % (refKey, detect), "RecHitsClusVsRecHits_radius_frac_energy_%s_%s;radius [mm];E fraction rel. to %s (%s)" % (refKey, detect, refKey, detect), 100, -2.5, 497.5)
+            for eFrac in np.arange(0.5, 1.01, 0.05):
+                histDict["SimVsRecHits_radius_events_eFrac%d_%s_%s" % (eFrac*100, refKey, detect)] = ROOT.TH1F("SimVsRecHits_radius_events_eFrac%d_%s_%s" % (eFrac*100, refKey, detect), "SimVsRecHits_radius_events_eFrac%d_%s_%s;radius [mm];events (%s)" % (eFrac*100, refKey, detect, detect), 100, -2.5, 497.5)
+                histDict["RecHitsClusVsRecHits_radius_events_eFrac%d_%s_%s" % (eFrac*100, refKey, detect)] = ROOT.TH1F("RecHitsClusVsRecHits_radius_events_eFrac%d_%s_%s" % (eFrac*100, refKey, detect), "RecHitsClusVsRecHits_radius_events_eFrac%d_%s_%s;radius [mm];events (%s)" % (eFrac*100, refKey, detect, detect), 100, -2.5, 497.5)
 
     return histDict
 
 
-def processSample(chain, nEvents, outDir, maxLayer, applyRecHitsRelPtCut, simClusPtCut, imgType, logger, geometry):
+def processSample(chain, nEvents, outDir, maxLayer, applyRecHitsRelPtCut, simClusECut, imgType, logger, geometry, rootOnly=False):
     """process a single sample."""
     HGCalHelpers.createOutputDir(outDir)
     histDict = getHists()
-    canvas = ROOT.TCanvas(outDir, outDir, 500, 500)
+    canvas = None
+    if not rootOnly:
+        canvas = ROOT.TCanvas(outDir, outDir, 500, 500)
 
     sampleEvents = chain.GetEntries()
     logger.info("Events: %d" % sampleEvents)
@@ -256,7 +269,7 @@ def processSample(chain, nEvents, outDir, maxLayer, applyRecHitsRelPtCut, simClu
             histDict["SimClus_eta"].Fill(simCl.eta)
             histDict["SimClus_phi"].Fill(simCl.phi)
             # if (matchesGen[simClusIndex]):
-            if (simCl.pt >= simClusPtCut) and not ((abs(simCl.eta) < 1.7) or (abs(simCl.eta) > 2.7)):
+            if (simCl.energy >= simClusECut) and not ((abs(simCl.eta) < 1.7) or (abs(simCl.eta) > 2.7)):
                 histDict["SimClus_energy_pass"].Fill(simCl.energy)
                 histDict["SimClus_pt_pass"].Fill(simCl.pt)
                 histDict["SimClus_eta_pass"].Fill(simCl.eta)
@@ -289,9 +302,6 @@ def processSample(chain, nEvents, outDir, maxLayer, applyRecHitsRelPtCut, simClu
                         hity = geometry.layerEtaPhiToY(thisHit.layer, thisHit.eta, thisHit.phi)
                         # print "x:", thisHit.x, geometry.layerEtaPhiToX(thisHit.layer, thisHit.eta, thisHit.phi), "y:", thisHit.y, geometry.layerEtaPhiToY(thisHit.layer, thisHit.eta, thisHit.phi), "layer:", thisHit.layer, "eta, phi:", thisHit.eta, thisHit.phi
                         # print simClx, hitx, simCly, hity, simCl.eta, thisHit.eta, simCl.phi, thisHit.phi
-                        histDict["RecHits_layers_delta_x"].Fill(thisHit.layer, simClx - hitx)
-                        histDict["RecHits_layers_delta_y"].Fill(thisHit.layer, simCly - hity)
-                        histDict["RecHits_layers_delta_d"].Fill(thisHit.layer, HGCalHelpers.deltad2(simClTLV, thisHit, geometry))
                         recHitTLV = ROOT.TLorentzVector()
                         recHitTLV.SetPtEtaPhiE(thisHit.pt, thisHit.eta, thisHit.phi, thisHit.energy)
                         recHitVectors["all"] += recHitTLV
@@ -423,6 +433,12 @@ def processSample(chain, nEvents, outDir, maxLayer, applyRecHitsRelPtCut, simClu
                         thisHit_x = geometry.layerEtaPhiToX(thisHit.layer, thisHit.eta, thisHit.phi)
                         thisHit_y = geometry.layerEtaPhiToY(thisHit.layer, thisHit.eta, thisHit.phi)
                         distanceSquared = (thisHit_x-refObject[0])**2 + (thisHit_y-refObject[1])**2
+                        histDict["RecHits_layers_delta_x_%s" % refKey].Fill(thisHit.layer, refObject[0] - hitx)
+                        histDict["RecHits_layers_delta_y_%s" % refKey].Fill(thisHit.layer, refObject[1] - hity)
+                        histDict["RecHits_layers_delta_d_%s" % refKey].Fill(thisHit.layer, distanceSquared)
+                        histDict["RecHits_layers_delta_x_eWeight_%s" % refKey].Fill(thisHit.layer, refObject[0] - thisHit_x, thisHit.energy)
+                        histDict["RecHits_layers_delta_y_eWeight_%s" % refKey].Fill(thisHit.layer, refObject[1] - thisHit_y, thisHit.energy)
+                        histDict["RecHits_layers_delta_d_eWeight_%s" % refKey].Fill(thisHit.layer, math.sqrt(distanceSquared), thisHit.energy)
                         for radius in range(1, maxRadius, 5):
                             if (distanceSquared < radius**2):
                                 tmpTLV = ROOT.TLorentzVector()
@@ -434,6 +450,16 @@ def processSample(chain, nEvents, outDir, maxLayer, applyRecHitsRelPtCut, simClu
                             # also make plots relative to RecHitCluster sum in a subdetector
                             if (recHitVectors[detect].E() != 0):
                                 histDict["RecHitsClusVsRecHits_radius_frac_energy_%s_%s" % (refKey, detect)].Fill(radius, recHitVectorsRadius[detect][radius].E()/recHitVectors[detect].E())
+                        for eFrac in np.arange(0.5, 1.01, 0.05):
+                            for radius in range(1, maxRadius, 5):
+                                if (recHitVectorsRadius[detect][radius].E()/simCl.energy > eFrac):
+                                    histDict["SimVsRecHits_radius_events_eFrac%d_%s_%s" % (eFrac*100, refKey, detect)].Fill(radius)
+                                    break
+                            for radius in range(1, maxRadius, 5):
+                                if (recHitVectors[detect].E() != 0):
+                                    if (recHitVectorsRadius[detect][radius].E()/recHitVectors[detect].E() > eFrac):
+                                        histDict["RecHitsClusVsRecHits_radius_events_eFrac%d_%s_%s" % (eFrac*100, refKey, detect)].Fill(radius)
+                                        break
 
         if (nEvents > 0 and currentEvent >= nEvents):
             break
@@ -442,10 +468,10 @@ def processSample(chain, nEvents, outDir, maxLayer, applyRecHitsRelPtCut, simClu
     histDict["SimClus_eta_eff"].GetYaxis().SetTitle("eff.")
     # normalisation of a few histograms:
     for key, item in histDict.items():
-        if ((key.find("RecHitsClus_layers") >= 0) or (key.find("fracEvents_") >= 0) or (key.find("layers_N") >= 0) or (key.find("radius_frac_energy") >=0)):
+        if ((key.find("RecHitsClus_layers") >= 0) or (key.find("fracEvents_") >= 0) or (key.find("layers_N") >= 0) or (key.find("radius_frac_energy") >=0) or (key.find("radius_events_eFrac") >= 0)):
             # divide by number of selected SimClusters/events
             item.Scale(1./selectedEvents)
-    HGCalHelpers.saveHistograms(histDict, canvas, outDir, imgType, logScale=False)
+    HGCalHelpers.saveHistograms(histDict, canvas, outDir, imgType, logScale=False, rootOnly=rootOnly)
 
 
 def addIfDetectorLayer(myDict, itemToAdd, layer, secondIndex=None):
@@ -478,25 +504,30 @@ def addIfDetectorLayer(myDict, itemToAdd, layer, secondIndex=None):
 
 def main():
     """Main function and settings."""
-    geometry = HGCalHelpers.parseGeometry("v33-withBH.txt")
 
-    localTest = False
+    # parse the arguments and options
+    global opt, args, particles
+    usage = ('usage: %prog [options]\n' + '%prog -h for help')
+    parser = optparse.OptionParser(usage)
+
+    # input options
+    parser.add_option('', '--geometry', dest='geometryFile', type='string',  default='v33-withBH.txt', help='geometry file name')
+    parser.add_option('', '--sampleName', dest='sampleName', type='string',  default='', help='sample name')
+    parser.add_option('', '--files', dest='fileString', type='string',  default='', help='comma-separated file list')
+    parser.add_option('', '--eCut', dest='eCut', type=float,  default=0., help='SimCluster energy threshold')
+
+    # store options and arguments as global variables
+    global opt, args
+    (opt, args) = parser.parse_args()
+
+    geometry = HGCalHelpers.parseGeometry(opt.geometryFile)
+
+    runBatch = opt.sampleName != ''
+
     nEvents = -1
-    # dvzCut = -1000  # 320
-    simClusPtCuts = {}
-    simClusPtCuts["chargedPions_nPart1_Pt2_pre15_5k"] = 1.6
-    simClusPtCuts["chargedPions_nPart1_Pt5_pre15_5k"] = 4
-    simClusPtCuts["chargedPions_nPart1_Pt10_pre15_5k"] = 8
-    simClusPtCuts["chargedPions_nPart1_Pt20_pre15_5k"] = 16
-    simClusPtCuts["chargedPions_nPart1_Pt35_pre15_5k"] = 28
-    simClusPtCuts["chargedPions_nPart1_Pt200_pre15_5k"] = 160
-    imgType = "pdf"
     applyRecHitsRelPtCut = True
     maxLayer = 53
-    samples2Run = ["chargedPions_nPart1_Pt2_pre15_5k", "chargedPions_nPart1_Pt200_pre15_5k",
-                   "chargedPions_nPart1_Pt5_pre15_5k", "chargedPions_nPart1_Pt10_pre15_5k",
-                   "chargedPions_nPart1_Pt20_pre15_5k", "chargedPions_nPart1_Pt35_pre15_5k"
-                   ]
+    imgType = "pdf"
 
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
@@ -505,31 +536,70 @@ def main():
     formatter = logging.Formatter('%(message)s')
     ch.setFormatter(formatter)
 
-    sampleManager = SampleManager()
-    if localTest:
-        samples2Run = [samples2Run[-1]]
-        nEvents = 10
-        # inFile = ROOT.TFile.Open("root://eoscms.cern.ch//eos/cms/store/cmst3/group/hgcal/CMG_studies/Production/partGun_clange_PDGid211_nPart1_Pt5_20161102/NTUP/partGun_PDGid211_x60_Pt5.0To5.0_NTUP_1.root")
-        # chain = inFile.Get("ana/hgc")
+    if not runBatch:
+        localTest = False
 
-    # processSample(chain, nEvents, outDir, maxLayer, applyRecHitsRelPtCut, simClusPtCut, imgType, logger)
-    jobs = []
-    for sampleName in samples2Run:
-        # sampleName = "chargedPions_nPart1_Pt20_pre15"
-        outDir = sampleName
-        simClusPtCut = simClusPtCuts[sampleName]
-        sample = sampleManager.getSample(sampleName)
+        # dvzCut = -1000  # 320
+        # simClusPtCuts = {}
+        # simClusPtCuts["chargedPions_nPart1_Pt2_pre15_5k"] = 1.6
+        # simClusPtCuts["chargedPions_nPart1_Pt5_pre15_5k"] = 4
+        # simClusPtCuts["chargedPions_nPart1_Pt10_pre15_5k"] = 8
+        # simClusPtCuts["chargedPions_nPart1_Pt20_pre15_5k"] = 16
+        # simClusPtCuts["chargedPions_nPart1_Pt35_pre15_5k"] = 28
+        # simClusPtCuts["chargedPions_nPart1_Pt200_pre15_5k"] = 160
+        simClusECuts = {}
+        simClusECuts["chargedPions_nPart1_E2_pre15_5k"] = 1.8
+        simClusECuts["chargedPions_nPart1_E5_pre15_5k"] = 4.5
+        simClusECuts["chargedPions_nPart1_E10_pre15_5k"] = 9
+        simClusECuts["chargedPions_nPart1_E20_pre15_5k"] = 18
+        simClusECuts["chargedPions_nPart1_E40_pre15_5k"] = 36
+        simClusECuts["chargedPions_nPart1_E80_pre15_5k"] = 72
+        simClusECuts["chargedPions_nPart1_E160_pre15_5k"] = 144
+        simClusECuts["chargedPions_nPart1_E320_pre15_5k"] = 288
+        # samples2Run = ["chargedPions_nPart1_Pt2_pre15_5k", "chargedPions_nPart1_Pt200_pre15_5k",
+        #                "chargedPions_nPart1_Pt5_pre15_5k", "chargedPions_nPart1_Pt10_pre15_5k",
+        #                "chargedPions_nPart1_Pt20_pre15_5k", "chargedPions_nPart1_Pt35_pre15_5k"
+        #                ]
+        samples2Run = ["chargedPions_nPart1_E2_pre15_5k", "chargedPions_nPart1_E5_pre15_5k",
+                       "chargedPions_nPart1_E10_pre15_5k", "chargedPions_nPart1_E20_pre15_5k",
+                       "chargedPions_nPart1_E40_pre15_5k", "chargedPions_nPart1_E80_pre15_5k",
+                       "chargedPions_nPart1_E160_pre15_5k", "chargedPions_nPart1_E320_pre15_5k"
+                       ]
+
+        sampleManager = SampleManager()
+        if localTest:
+            samples2Run = [samples2Run[-1]]
+            nEvents = 10
+            # inFile = ROOT.TFile.Open("root://eoscms.cern.ch//eos/cms/store/cmst3/group/hgcal/CMG_studies/Production/partGun_clange_PDGid211_nPart1_Pt5_20161102/NTUP/partGun_PDGid211_x60_Pt5.0To5.0_NTUP_1.root")
+            # chain = inFile.Get("ana/hgc")
+
+        # processSample(chain, nEvents, outDir, maxLayer, applyRecHitsRelPtCut, simClusPtCut, imgType, logger)
+        jobs = []
+        for sampleName in samples2Run:
+            # sampleName = "chargedPions_nPart1_Pt20_pre15"
+            outDir = sampleName
+            # simClusPtCut = simClusPtCuts[sampleName]
+            simClusECut = simClusECuts[sampleName]
+            sample = sampleManager.getSample(sampleName)
+            chain = sample.getChain()
+            logger.info("Submitting %s" % sampleName)
+            process = Process(target=processSample, args=(chain, nEvents, outDir, maxLayer, applyRecHitsRelPtCut, simClusECut, imgType, logger, geometry))
+            jobs.append(process)
+
+        for j in jobs:
+            j.start()
+
+        # Ensure all of the processes have finished
+        for j in jobs:
+            j.join()
+    else:
+        simClusECut = opt.eCut
+        outDir = os.getcwd() + '/' + opt.sampleName
+        fileList = opt.fileString.split(",")
+        sample = Sample(opt.sampleName, "", fileList=fileList)
         chain = sample.getChain()
-        logger.info("Submitting %s" % sampleName)
-        process = Process(target=processSample, args=(chain, nEvents, outDir, maxLayer, applyRecHitsRelPtCut, simClusPtCut, imgType, logger, geometry))
-        jobs.append(process)
-
-    for j in jobs:
-        j.start()
-
-    # Ensure all of the processes have finished
-    for j in jobs:
-        j.join()
+        logger.info("Running %s" % opt.sampleName)
+        processSample(chain, nEvents, outDir, maxLayer, applyRecHitsRelPtCut, simClusECut, imgType, logger, geometry, rootOnly=True)
 
 
 if __name__ == '__main__':
