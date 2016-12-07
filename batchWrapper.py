@@ -13,8 +13,9 @@ def chunks(l, n):
         yield l[i:i + n]
 
 
-def processCmd(cmd, quiet = 0):
-    # print cmd
+def processCmd(cmd, quiet=True):
+    if not quiet:
+        print cmd
     status, output = commands.getstatusoutput(cmd)
     if (status != 0 and not quiet):
         print 'Error in processing command:\n   ['+cmd+']'
@@ -34,7 +35,7 @@ def main():
     geometryFile = currentDir + "/v33-withBH.txt"
 
     # nEvents = -1
-    filesPerJob = 4
+    defaultFilesPerJob = 4
     queue = '1nh'
     batchScript = currentDir + '/' + 'batchScript.sh'
     # dvzCut = -1000  # 320
@@ -75,12 +76,18 @@ def main():
     for sampleName in samples2Run:
         # sampleName = "chargedPions_nPart1_Pt20_pre15"
         simClusECut = simClusECuts[sampleName]
+        if simClusECut > 100:
+            filesPerJob = 1
+        elif simClusECut > 50:
+            filesPerJob = 2
+        else:
+            filesPerJob = defaultFilesPerJob
         sample = sampleManager.getSample(sampleName)
         sampleFiles = sample.getFiles()
         for i, chunk in enumerate(chunks(sampleFiles, filesPerJob)):
-            logger.info("Submitting %s" % sampleName)
-            logger.info("Job %d with files:" % i)
-            logger.info(chunk)
+            logger.info("Submitting %s job %d" % (sampleName, i))
+            logger.debug("Job %d with files:" % i)
+            logger.debug(chunk)
             # submit job
             if not os.path.exists(outDir + '/' + sampleName):
                 os.makedirs(outDir + '/' + sampleName)
@@ -90,7 +97,7 @@ def main():
             stdOut = "{outDir}/{sampleName}/std/{subSampleName}.out".format(outDir=outDir, sampleName=sampleName, subSampleName=subSampleName)
             stdErr = "{outDir}/{sampleName}/std/{subSampleName}.err".format(outDir=outDir, sampleName=sampleName, subSampleName=subSampleName)
             fileList = ",".join(chunk)
-            cmd = 'bsub -o {stdOut} -e {stdErr} -q {queue} -J {batchScript} {p1} {p2} {p3} {p4} {p5} {p6} \"{p7}\" {p8} {p9}'.format(stdOut=stdOut, stdErr=stdErr, queue=queue, batchScript=batchScript, p1=currentDir, p2=CMSSW_BASE, p3=CMSSW_VERSION, p4=SCRAM_ARCH, p5=geometryFile, p6=subSampleName, p7=fileList, p8=simClusECut, p9=outDir)
+            cmd = 'bsub -o {stdOut} -e {stdErr} -q {queue} -J {jobName} {batchScript} {p1} {p2} {p3} {p4} {p5} {p6} \"{p7}\" {p8} {p9}'.format(stdOut=stdOut, stdErr=stdErr, queue=queue, jobName=subSampleName, batchScript=batchScript, p1=currentDir, p2=CMSSW_BASE, p3=CMSSW_VERSION, p4=SCRAM_ARCH, p5=geometryFile, p6=subSampleName, p7=fileList, p8=simClusECut, p9=outDir)
             processCmd(cmd)
             time.sleep(2)
 

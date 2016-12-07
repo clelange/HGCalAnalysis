@@ -10,6 +10,10 @@ def main():
                     "chargedPions_nPart1_Pt200_pre15_5k"
                     ]
 
+    outDir = '/afs/cern.ch/work/c/clange/HGCal/output'
+    inDir = '/afs/cern.ch/work/c/clange/HGCal/output'
+    ROOT.gROOT.SetBatch(True)
+
     colourBlindColours = {}
     colourBlindColours[0] = ROOT.TColor(10000, 0, 0.4470588235, 0.6980392157)
     colourBlindColours[1] = ROOT.TColor(10001, 0.337254902, 0.7058823529, 0.9137254902)
@@ -184,7 +188,7 @@ def main():
 
     fileDict = {}
     for sampleName in samples2plot:
-        fileDict[sampleName] = ROOT.TFile.Open("%s.root" % sampleName)
+        fileDict[sampleName] = ROOT.TFile.Open("%s/%s.root" % (inDir, sampleName))
 
     firstPlot = True
     myLegend = ROOT.TLegend(0.16, 0.75, 0.48, 0.95)
@@ -359,7 +363,7 @@ def main():
             for index in range(len(samples2plot)):
                 tBox.DrawLatexNDC(0.5, 0.9-index*0.04, "mean: %5.2f, RMS: %5.2f" % (meanVec[samples2plot[index]], rmsVec[samples2plot[index]]))
         firstPlot = False
-        c.SaveAs("%s.pdf" % hist)
+        c.SaveAs("%s/%s.pdf" % (outDir, hist))
 
 
 

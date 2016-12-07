@@ -536,8 +536,10 @@ def main():
     formatter = logging.Formatter('%(message)s')
     ch.setFormatter(formatter)
 
+    ROOT.gROOT.SetBatch(True)
+
     if not runBatch:
-        localTest = False
+        localTest = True
 
         # dvzCut = -1000  # 320
         # simClusPtCuts = {}
