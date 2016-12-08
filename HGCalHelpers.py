@@ -21,12 +21,13 @@ def createOutputDir(outDir):
         os.makedirs(outDir)
 
 
-def saveHistograms(histDict, canvas, outDir, imgType, logScale=False, doFit=False, rootOnly=False):
+def saveHistograms(histDict, canvas, outDir, imgType, logScale=False, doFit=False, rootOnly=False, plotsOnly=False):
     """Save all the histograms as ROOT file and image files, optionally fit Gaussian."""
     # also store histograms in ROOT file
     outFileName = "%s.root" % outDir
-    print outFileName
-    outFile = ROOT.TFile(outFileName, "recreate")
+    outFile = None
+    if not plotsOnly:
+        outFile = ROOT.TFile(outFileName, "recreate")
     logString = ""
     if not rootOnly:
         ROOT.gStyle.SetOptTitle(0)
@@ -47,7 +48,8 @@ def saveHistograms(histDict, canvas, outDir, imgType, logScale=False, doFit=Fals
         # write histogram to file
         if type(item) == ROOT.TH2F or type(item) == ROOT.TH1F:
             item.Sumw2()
-        item.Write()
+        if not plotsOnly:
+            item.Write()
         if not rootOnly:
             if type(item) == ROOT.TH2F:
                 ROOT.gStyle.SetOptStat(0)
@@ -93,8 +95,9 @@ def saveHistograms(histDict, canvas, outDir, imgType, logScale=False, doFit=Fals
                 pfY.Draw()
                 canvas.SaveAs("{}/{}{}_profileY.{}".format(outDir, key, logString, imgType))
                 pfY.Delete()
-    outFile.Write()
-    outFile.Close()
+    if not plotsOnly:
+        outFile.Write()
+        outFile.Close()
 
 
 def getGenParticles(event, histDict, dvzCut):

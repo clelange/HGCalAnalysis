@@ -87,6 +87,7 @@ def getXYWeighted(rechits, layer):
 def getHists():
     """function to book all the histograms and return as dictionary."""
     histDict = {}
+    histDict["selectedEvents"] = ROOT.TH1F("selectedEvents", "selectedEvents", 1, 0.5, 1.5)
     clusters = ["SimClus", "PFClus", "GenPart", "RecHits", "RecHitsClus"]
     detectors = ["EE", "FH", "BH", "FH+BH", "all"]
     for clus in clusters:
@@ -466,11 +467,13 @@ def processSample(chain, nEvents, outDir, maxLayer, applyRecHitsRelPtCut, simClu
     histDict["SimClus_eta_eff"] = ROOT.TGraphAsymmErrors(histDict["SimClus_eta_pass"].Clone("SimClus_eta_eff"))
     histDict["SimClus_eta_eff"].Divide(histDict["SimClus_eta_pass"], histDict["SimClus_eta"], "cl=0.683 b(1,1) mode")
     histDict["SimClus_eta_eff"].GetYaxis().SetTitle("eff.")
-    # normalisation of a few histograms:
-    for key, item in histDict.items():
-        if ((key.find("RecHitsClus_layers") >= 0) or (key.find("fracEvents_") >= 0) or (key.find("layers_N") >= 0) or (key.find("radius_frac_energy") >=0) or (key.find("radius_events_eFrac") >= 0)):
-            # divide by number of selected SimClusters/events
-            item.Scale(1./selectedEvents)
+    # normalisation of a few histograms, only makes sense when producing plots directly:
+    if not rootOnly:
+        for key, item in histDict.items():
+            if ((key.find("RecHitsClus_layers") >= 0) or (key.find("fracEvents_") >= 0) or (key.find("layers_N") >= 0) or (key.find("radius_frac_energy") >=0) or (key.find("radius_events_eFrac") >= 0)):
+                # divide by number of selected SimClusters/events
+                item.Scale(1./selectedEvents)
+    histDict["selectedEvents"].Fill(1, selectedEvents)
     HGCalHelpers.saveHistograms(histDict, canvas, outDir, imgType, logScale=False, rootOnly=rootOnly)
 
 

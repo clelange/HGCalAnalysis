@@ -2,12 +2,14 @@ import ROOT
 # import logging
 
 def main():
-    samples2plot = ["chargedPions_nPart1_Pt2_pre15_5k",
-                    "chargedPions_nPart1_Pt5_pre15_5k",
-                    # "chargedPions_nPart1_Pt10_pre15_5k",
-                    # "chargedPions_nPart1_Pt20_pre15_5k",
-                    "chargedPions_nPart1_Pt35_pre15_5k",
-                    "chargedPions_nPart1_Pt200_pre15_5k"
+    samples2plot = ["chargedPions_nPart1_E2_pre15_5k",
+                    "chargedPions_nPart1_E5_pre15_5k",
+                    # "chargedPions_nPart1_E10_pre15_5k",
+                    "chargedPions_nPart1_E20_pre15_5k",
+                    # "chargedPions_nPart1_E40_pre15_5k",
+                    "chargedPions_nPart1_E80_pre15_5k",
+                    # "chargedPions_nPart1_E160_pre15_5k",
+                    "chargedPions_nPart1_E320_pre15_5k"
                     ]
 
     outDir = '/afs/cern.ch/work/c/clange/HGCal/output'
@@ -22,30 +24,36 @@ def main():
     colourBlindColours[4] = ROOT.TColor(10004, 0.8352941176, 0.368627451, 0)
 
     sampleColours = {}
-    sampleColours["chargedPions_nPart1_Pt2_pre15_5k"] = 10000
-    sampleColours["chargedPions_nPart1_Pt5_pre15_5k"] = 10001
-    sampleColours["chargedPions_nPart1_Pt35_pre15_5k"] = 10002
-    sampleColours["chargedPions_nPart1_Pt200_pre15_5k"] = 10003
+    sampleColours["chargedPions_nPart1_E2_pre15_5k"] = 10000
+    sampleColours["chargedPions_nPart1_E5_pre15_5k"] = 10001
+    sampleColours["chargedPions_nPart1_E20_pre15_5k"] = 10002
+    sampleColours["chargedPions_nPart1_E80_pre15_5k"] = 10003
+    sampleColours["chargedPions_nPart1_E320_pre15_5k"] = 10004
 
     sampleMarkerStyle = {}
-    sampleMarkerStyle["chargedPions_nPart1_Pt2_pre15_5k"] = 20
-    sampleMarkerStyle["chargedPions_nPart1_Pt5_pre15_5k"] = 21
-    sampleMarkerStyle["chargedPions_nPart1_Pt35_pre15_5k"] = 22
-    sampleMarkerStyle["chargedPions_nPart1_Pt200_pre15_5k"] = 23
+    sampleMarkerStyle["chargedPions_nPart1_E2_pre15_5k"] = 20
+    sampleMarkerStyle["chargedPions_nPart1_E5_pre15_5k"] = 21
+    sampleMarkerStyle["chargedPions_nPart1_E20_pre15_5k"] = 22
+    sampleMarkerStyle["chargedPions_nPart1_E80_pre15_5k"] = 23
+    sampleMarkerStyle["chargedPions_nPart1_E320_pre15_5k"] = 24
 
     sampleLabels = {}
-    sampleLabels["chargedPions_nPart1_Pt2_pre15_5k"] = "p_{T} = 2 GeV"
-    sampleLabels["chargedPions_nPart1_Pt5_pre15_5k"] = "p_{T} = 5 GeV"
-    sampleLabels["chargedPions_nPart1_Pt35_pre15_5k"] = "p_{T} = 35 GeV"
-    sampleLabels["chargedPions_nPart1_Pt200_pre15_5k"] = "p_{T} = 200 GeV"
+    sampleLabels["chargedPions_nPart1_E2_pre15_5k"] = "E = 2 GeV"
+    sampleLabels["chargedPions_nPart1_E5_pre15_5k"] = "E = 5 GeV"
+    sampleLabels["chargedPions_nPart1_E20_pre15_5k"] = "E = 20 GeV"
+    sampleLabels["chargedPions_nPart1_E80_pre15_5k"] = "E = 80 GeV"
+    sampleLabels["chargedPions_nPart1_E320_pre15_5k"] = "E = 360 GeV"
 
     histList2D = ["RecHitsClus_layers_energy_cumulative",
                   "RecHitsClus_layers_energy_relative",
                   "RecHits_layers_energy",
                   "SimVsRecHits_frac_energy_EE_FH+BH_fullEta",
-                  "RecHits_layers_delta_x",
-                  "RecHits_layers_delta_y",
-                  "RecHits_layers_delta_d",
+                  "RecHits_layers_delta_x_RecHitsClusMaxLayer",
+                  "RecHits_layers_delta_y_RecHitsClusMaxLayer",
+                  "RecHits_layers_delta_d_RecHitsClusMaxLayer",
+                  "RecHits_layers_delta_x_eWeight_RecHitsClusMaxLayer",
+                  "RecHits_layers_delta_y_eWeight_RecHitsClusMaxLayer",
+                  "RecHits_layers_delta_d_eWeight_RecHitsClusMaxLayer",
                   ]
 
     histList1D = ["RecHitsClus_layers_energy_1D_cumulative",
@@ -59,6 +67,7 @@ def main():
                   "SimVsRecHits_frac_energy_BH_fullEta_fracEvents_1D",
                   "SimVsRecHits_frac_energy_BH_fullEta_fracEvents_1D_cumulative",
                   "SimClus_pt",
+                  "SimClus_energy",
                   "RecHitsClusVsRecHits_radius_frac_energy_RecHitsClusFirstLayer_all",
                   "RecHitsClusVsRecHits_radius_frac_energy_RecHitsClusFirstLayer_EE",
                   "RecHitsClusVsRecHits_radius_frac_energy_RecHitsClusFirstLayer_FH",
@@ -89,6 +98,16 @@ def main():
                   "SimVsRecHits_radius_frac_energy_SimCluster_FH",
                   "SimVsRecHits_radius_frac_energy_SimCluster_BH",
                   "SimVsRecHits_radius_frac_energy_SimCluster_FH+BH",
+                  "RecHitsClusVsRecHits_radius_events_eFrac75_RecHitsClusMaxLayer_all",
+                  "RecHitsClusVsRecHits_radius_events_eFrac80_RecHitsClusMaxLayer_all",
+                  "RecHitsClusVsRecHits_radius_events_eFrac85_RecHitsClusMaxLayer_all",
+                  "RecHitsClusVsRecHits_radius_events_eFrac90_RecHitsClusMaxLayer_all",
+                  "RecHitsClusVsRecHits_radius_events_eFrac95_RecHitsClusMaxLayer_all",
+                  "SimVsRecHits_radius_events_eFrac75_RecHitsClusMaxLayer_all",
+                  "SimVsRecHits_radius_events_eFrac80_RecHitsClusMaxLayer_all",
+                  "SimVsRecHits_radius_events_eFrac85_RecHitsClusMaxLayer_all",
+                  "SimVsRecHits_radius_events_eFrac90_RecHitsClusMaxLayer_all",
+                  "SimVsRecHits_radius_events_eFrac95_RecHitsClusMaxLayer_all",
                   ]
 
     histYTitles = {}
@@ -107,9 +126,13 @@ def main():
     histYTitles["SimVsRecHits_frac_energy_BH_fullEta_fracEvents_1D"] = "fraction of events"
     histYTitles["SimVsRecHits_frac_energy_BH_fullEta_fracEvents_1D_cumulative"] = "cumulative fraction of events"
     histYTitles["SimClus_pt"] = "entries"
-    histYTitles["RecHits_layers_delta_x"] = "#Delta x [mm]"
-    histYTitles["RecHits_layers_delta_y"] = "#Delta y [mm]"
-    histYTitles["RecHits_layers_delta_d"] = "#Delta d [mm]"
+    histYTitles["SimClus_energy"] = "entries"
+    histYTitles["RecHits_layers_delta_x_RecHitsClusMaxLayer"] = "#Delta x [mm]"
+    histYTitles["RecHits_layers_delta_y_RecHitsClusMaxLayer"] = "#Delta y [mm]"
+    histYTitles["RecHits_layers_delta_d_RecHitsClusMaxLayer"] = "#Delta d [mm]"
+    histYTitles["RecHits_layers_delta_x_eWeight_RecHitsClusMaxLayer"] = "#Delta x [mm]"
+    histYTitles["RecHits_layers_delta_y_eWeight_RecHitsClusMaxLayer"] = "#Delta y [mm]"
+    histYTitles["RecHits_layers_delta_d_eWeight_RecHitsClusMaxLayer"] = "#Delta d [mm]"
     histYTitles["RecHitsClusVsRecHits_radius_frac_energy_RecHitsClusFirstLayer_all"] = "#sum RecHits(radius) / #sum RecHits(total) E for all subdetector(s)"
     histYTitles["RecHitsClusVsRecHits_radius_frac_energy_RecHitsClusFirstLayer_EE"] = "#sum RecHits(radius) / #sum RecHits(total) E for EE subdetector(s)"
     histYTitles["RecHitsClusVsRecHits_radius_frac_energy_RecHitsClusFirstLayer_FH"] = "#sum RecHits(radius) / #sum RecHits(total) E for FH subdetector(s)"
@@ -140,6 +163,16 @@ def main():
     histYTitles["SimVsRecHits_radius_frac_energy_SimCluster_FH"] = "#sum RecHits(radius) / SimCluster E for FH subdetector(s)"
     histYTitles["SimVsRecHits_radius_frac_energy_SimCluster_BH"] = "#sum RecHits(radius) / SimCluster E for BH subdetector(s)"
     histYTitles["SimVsRecHits_radius_frac_energy_SimCluster_FH+BH"] = "#sum RecHits(radius) / SimCluster E for FH+BH subdetector(s)"
+    histYTitles["RecHitsClusVsRecHits_radius_events_eFrac75_RecHitsClusMaxLayer_all"] = "fraction of events"
+    histYTitles["RecHitsClusVsRecHits_radius_events_eFrac80_RecHitsClusMaxLayer_all"] = "fraction of events"
+    histYTitles["RecHitsClusVsRecHits_radius_events_eFrac85_RecHitsClusMaxLayer_all"] = "fraction of events"
+    histYTitles["RecHitsClusVsRecHits_radius_events_eFrac90_RecHitsClusMaxLayer_all"] = "fraction of events"
+    histYTitles["RecHitsClusVsRecHits_radius_events_eFrac95_RecHitsClusMaxLayer_all"] = "fraction of events"
+    histYTitles["SimVsRecHits_radius_events_eFrac75_RecHitsClusMaxLayer_all"] = "fraction of events"
+    histYTitles["SimVsRecHits_radius_events_eFrac80_RecHitsClusMaxLayer_all"] = "fraction of events"
+    histYTitles["SimVsRecHits_radius_events_eFrac85_RecHitsClusMaxLayer_all"] = "fraction of events"
+    histYTitles["SimVsRecHits_radius_events_eFrac90_RecHitsClusMaxLayer_all"] = "fraction of events"
+    histYTitles["SimVsRecHits_radius_events_eFrac95_RecHitsClusMaxLayer_all"] = "fraction of events"
 
     for histName in histList2D+histList1D:
         if histName not in histYTitles:
@@ -152,9 +185,13 @@ def main():
     histXTitles["SimVsRecHits_frac_energy_BH_fullEta_fracEvents_1D_cumulative"] = "summed RecHits energy fraction BH"
     histXTitles["SimVsRecHits_frac_energy_EE_FH+BH_fullEta"] = "summed RecHits energy fraction EE vs. FH+BH"
     histXTitles["SimClus_pt"] = "SimCluster p_{T} [GeV]"
-    histXTitles["RecHits_layers_delta_x"] = "layer"
-    histXTitles["RecHits_layers_delta_y"] = "layer"
-    histXTitles["RecHits_layers_delta_d"] = "layer"
+    histXTitles["SimClus_energy"] = "SimCluster E [GeV]"
+    histXTitles["RecHits_layers_delta_x_RecHitsClusMaxLayer"] = "layer"
+    histXTitles["RecHits_layers_delta_y_RecHitsClusMaxLayer"] = "layer"
+    histXTitles["RecHits_layers_delta_d_RecHitsClusMaxLayer"] = "layer"
+    histXTitles["RecHits_layers_delta_x_eWeight_RecHitsClusMaxLayer"] = "layer"
+    histXTitles["RecHits_layers_delta_y_eWeight_RecHitsClusMaxLayer"] = "layer"
+    histXTitles["RecHits_layers_delta_d_eWeight_RecHitsClusMaxLayer"] = "layer"
     histXTitles["RecHitsClusVsRecHits_radius_frac_energy_RecHitsClusFirstLayer_all"] = "radius [mm]"
     histXTitles["RecHitsClusVsRecHits_radius_frac_energy_RecHitsClusFirstLayer_EE"] = "radius [mm]"
     histXTitles["RecHitsClusVsRecHits_radius_frac_energy_RecHitsClusFirstLayer_FH"] = "radius [mm]"
@@ -185,10 +222,23 @@ def main():
     histXTitles["SimVsRecHits_radius_frac_energy_SimCluster_FH"] = "radius [mm]"
     histXTitles["SimVsRecHits_radius_frac_energy_SimCluster_BH"] = "radius [mm]"
     histXTitles["SimVsRecHits_radius_frac_energy_SimCluster_FH+BH"] = "radius [mm]"
+    histXTitles["RecHitsClusVsRecHits_radius_events_eFrac75_RecHitsClusMaxLayer_all"] = "radius [mm]"
+    histXTitles["RecHitsClusVsRecHits_radius_events_eFrac80_RecHitsClusMaxLayer_all"] = "radius [mm]"
+    histXTitles["RecHitsClusVsRecHits_radius_events_eFrac85_RecHitsClusMaxLayer_all"] = "radius [mm]"
+    histXTitles["RecHitsClusVsRecHits_radius_events_eFrac90_RecHitsClusMaxLayer_all"] = "radius [mm]"
+    histXTitles["RecHitsClusVsRecHits_radius_events_eFrac95_RecHitsClusMaxLayer_all"] = "radius [mm]"
+    histXTitles["SimVsRecHits_radius_events_eFrac75_RecHitsClusMaxLayer_all"] = "radius [mm]"
+    histXTitles["SimVsRecHits_radius_events_eFrac80_RecHitsClusMaxLayer_all"] = "radius [mm]"
+    histXTitles["SimVsRecHits_radius_events_eFrac85_RecHitsClusMaxLayer_all"] = "radius [mm]"
+    histXTitles["SimVsRecHits_radius_events_eFrac90_RecHitsClusMaxLayer_all"] = "radius [mm]"
+    histXTitles["SimVsRecHits_radius_events_eFrac95_RecHitsClusMaxLayer_all"] = "radius [mm]"
 
     fileDict = {}
+    selectedEvents = {}
     for sampleName in samples2plot:
         fileDict[sampleName] = ROOT.TFile.Open("%s/%s.root" % (inDir, sampleName))
+        selectedEventsHist = fileDict[sampleName].Get("selectedEvents")
+        selectedEvents[sampleName] = selectedEventsHist.GetBinContent(1)
 
     firstPlot = True
     myLegend = ROOT.TLegend(0.16, 0.75, 0.48, 0.95)
@@ -202,6 +252,7 @@ def main():
     c = ROOT.TCanvas("c", "c", 500, 500)
     printMeanRMS = False
     for hist in histList2D:
+        print "Plotting", hist
         histDict2D = {}
         histStackpfX = ROOT.THStack("%s_stack_pfX" % hist, "")
         histStackpjX = ROOT.THStack("%s_stack_pjX" % hist, "")
@@ -219,6 +270,9 @@ def main():
         rmsVecPjY = {}
         for sampleName in samples2plot:
             histDict2D[hist] = fileDict[sampleName].Get(hist)
+            if ((hist.find("RecHitsClus_layers") >= 0) or (hist.find("fracEvents_") >= 0) or (hist.find("layers_N") >= 0) or (hist.find("radius_frac_energy") >=0) or (hist.find("radius_events_eFrac") >= 0)):
+                # divide by number of selected SimClusters/events
+                histDict2D[hist].Scale(1./selectedEvents[sampleName])
             profileX = histDict2D[hist].ProfileX("%s_%s_pfX" % (sampleName, hist))
             profileX.SetMarkerColor(sampleColours[sampleName])
             profileX.SetLineColor(sampleColours[sampleName])
@@ -332,7 +386,10 @@ def main():
         meanVec = {}
         rmsVec = {}
         for sampleName in samples2plot:
-            histDict1D[hist] = fileDict[sampleName].Get(hist).Clone("%s%s" %(hist,sampleName))
+            histDict1D[hist] = fileDict[sampleName].Get(hist).Clone("%s%s" %(hist, sampleName))
+            if ((hist.find("RecHitsClus_layers") >= 0) or (hist.find("fracEvents_") >= 0) or (hist.find("layers_N") >= 0) or (hist.find("radius_frac_energy") >=0) or (hist.find("radius_events_eFrac") >= 0)):
+                # divide by number of selected SimClusters/events
+                histDict1D[hist].Scale(1./selectedEvents[sampleName])
             histDict1D[hist].SetMarkerColor(sampleColours[sampleName])
             histDict1D[hist].SetLineColor(sampleColours[sampleName])
             histDict1D[hist].SetMarkerStyle(sampleMarkerStyle[sampleName])
