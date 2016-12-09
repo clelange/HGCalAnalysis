@@ -331,7 +331,7 @@ def main():
             for index in range(len(samples2plot)):
                 tBox.DrawLatexNDC(0.5, 0.9-index*0.04, "mean: %5.2f, RMS: %5.2f" % (meanVecPfX[samples2plot[index]], rmsVecPfX[samples2plot[index]]))
         firstPlot = False
-        c.SaveAs("%s_pfX.pdf" % hist)
+        c.SaveAs("%s/%s_pfX.pdf" % (outDir, hist))
         # draw projectionX
         meanVec = {}
         rmsVec = {}
@@ -350,7 +350,7 @@ def main():
             tBox.SetTextFont(42)
             for index in range(len(samples2plot)):
                 tBox.DrawLatexNDC(0.5, 0.9-index*0.04, "mean: %5.2f, RMS: %5.2f" % (meanVecPjX[samples2plot[index]], rmsVecPjX[samples2plot[index]]))
-        c.SaveAs("%s_pjX.pdf" % hist)
+        c.SaveAs("%s/%s_pjX.pdf" % (outDir, hist))
         # and y
         histStackpfY.Draw("nostack,hist,p")
         histStackpfY.GetXaxis().SetTitle(histYTitles[hist])
@@ -364,7 +364,7 @@ def main():
             tBox.SetTextFont(42)
             for index in range(len(samples2plot)):
                 tBox.DrawLatexNDC(0.5, 0.9-index*0.04, "mean: %5.2f, RMS: %5.2f" % (meanVecPjX[samples2plot[index]], rmsVecPjX[samples2plot[index]]))
-        c.SaveAs("%s_pfY.pdf" % hist)
+        c.SaveAs("%s/%s_pfY.pdf" % (outDir, hist))
         histStackpjY.Draw("nostack,hist,p")
         histStackpjY.GetXaxis().SetTitle(histYTitles[hist])
         histStackpjY.SetMaximum(maxYprojY*1.2)
@@ -377,7 +377,7 @@ def main():
             tBox.SetTextFont(42)
             for index in range(len(samples2plot)):
                 tBox.DrawLatexNDC(0.5, 0.9-index*0.04, "mean: %5.2f, RMS: %5.2f" % (meanVecPjX[samples2plot[index]], rmsVecPjX[samples2plot[index]]))
-        c.SaveAs("%s_pjY.pdf" % hist)
+        c.SaveAs("%s/%s_pjY.pdf" % (outDir, hist))
 
     for hist in histList1D:
         histDict1D = {}
