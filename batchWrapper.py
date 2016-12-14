@@ -99,7 +99,7 @@ def main():
             fileList = ",".join(chunk)
             cmd = 'bsub -o {stdOut} -e {stdErr} -q {queue} -J {jobName} {batchScript} {p1} {p2} {p3} {p4} {p5} {p6} \"{p7}\" {p8} {p9}'.format(stdOut=stdOut, stdErr=stdErr, queue=queue, jobName=subSampleName, batchScript=batchScript, p1=currentDir, p2=CMSSW_BASE, p3=CMSSW_VERSION, p4=SCRAM_ARCH, p5=geometryFile, p6=subSampleName, p7=fileList, p8=simClusECut, p9=outDir)
             processCmd(cmd)
-            time.sleep(2)
+            time.sleep(1)
 
 
 if __name__ == '__main__':

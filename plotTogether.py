@@ -44,7 +44,8 @@ def main():
     sampleLabels["chargedPions_nPart1_E80_pre15_5k"] = "E = 80 GeV"
     sampleLabels["chargedPions_nPart1_E320_pre15_5k"] = "E = 360 GeV"
 
-    histList2D = ["RecHitsClus_layers_energy_cumulative",
+    histList2D = [
+                  "RecHitsClus_layers_energy_cumulative",
                   "RecHitsClus_layers_energy_relative",
                   "RecHits_layers_energy",
                   "SimVsRecHits_frac_energy_EE_FH+BH_fullEta",
@@ -54,6 +55,7 @@ def main():
                   "RecHits_layers_delta_x_eWeight_RecHitsClusMaxLayer",
                   "RecHits_layers_delta_y_eWeight_RecHitsClusMaxLayer",
                   "RecHits_layers_delta_d_eWeight_RecHitsClusMaxLayer",
+                  "RecHits_layers_delta_d2_eWeight_RecHitsClusMaxLayer",
                   ]
 
     histList1D = ["RecHitsClus_layers_energy_1D_cumulative",
@@ -78,6 +80,13 @@ def main():
                   "RecHitsClusVsRecHits_radius_frac_energy_RecHitsClusMaxLayer_FH",
                   "RecHitsClusVsRecHits_radius_frac_energy_RecHitsClusMaxLayer_BH",
                   "RecHitsClusVsRecHits_radius_frac_energy_RecHitsClusMaxLayer_FH+BH",
+                  # divide by total energy below
+                  "RecHitsClusVsRecHits_radius_energy_RecHitsClusMaxLayer_all",
+                  "RecHitsClusVsRecHits_radius_energy_RecHitsClusMaxLayer_EE",
+                  "RecHitsClusVsRecHits_radius_energy_RecHitsClusMaxLayer_FH",
+                  "RecHitsClusVsRecHits_radius_energy_RecHitsClusMaxLayer_BH",
+                  "RecHitsClusVsRecHits_radius_energy_RecHitsClusMaxLayer_FH+BH",
+                  #
                   "RecHitsClusVsRecHits_radius_frac_energy_SimCluster_all",
                   "RecHitsClusVsRecHits_radius_frac_energy_SimCluster_EE",
                   "RecHitsClusVsRecHits_radius_frac_energy_SimCluster_FH",
@@ -133,6 +142,7 @@ def main():
     histYTitles["RecHits_layers_delta_x_eWeight_RecHitsClusMaxLayer"] = "#Delta x [mm]"
     histYTitles["RecHits_layers_delta_y_eWeight_RecHitsClusMaxLayer"] = "#Delta y [mm]"
     histYTitles["RecHits_layers_delta_d_eWeight_RecHitsClusMaxLayer"] = "#Delta d [mm]"
+    histYTitles["RecHits_layers_delta_d2_eWeight_RecHitsClusMaxLayer"] = "#Delta d^{2} [mm^{2}]"
     histYTitles["RecHitsClusVsRecHits_radius_frac_energy_RecHitsClusFirstLayer_all"] = "#sum RecHits(radius) / #sum RecHits(total) E for all subdetector(s)"
     histYTitles["RecHitsClusVsRecHits_radius_frac_energy_RecHitsClusFirstLayer_EE"] = "#sum RecHits(radius) / #sum RecHits(total) E for EE subdetector(s)"
     histYTitles["RecHitsClusVsRecHits_radius_frac_energy_RecHitsClusFirstLayer_FH"] = "#sum RecHits(radius) / #sum RecHits(total) E for FH subdetector(s)"
@@ -143,6 +153,13 @@ def main():
     histYTitles["RecHitsClusVsRecHits_radius_frac_energy_RecHitsClusMaxLayer_FH"] = "#sum RecHits(radius) / #sum RecHits(total) E for FH subdetector(s)"
     histYTitles["RecHitsClusVsRecHits_radius_frac_energy_RecHitsClusMaxLayer_BH"] = "#sum RecHits(radius) / #sum RecHits(total) E for BH subdetector(s)"
     histYTitles["RecHitsClusVsRecHits_radius_frac_energy_RecHitsClusMaxLayer_FH+BH"] = "#sum RecHits(radius) / #sum RecHits(total) E for FH+BH subdetector(s)"
+    #
+    histYTitles["RecHitsClusVsRecHits_radius_energy_RecHitsClusMaxLayer_all"] = "#sum RecHits(radius) / #sum RecHits(total) E for all subdetector(s)"
+    histYTitles["RecHitsClusVsRecHits_radius_energy_RecHitsClusMaxLayer_EE"] = "#sum RecHits(radius) / #sum RecHits(total) E for EE subdetector(s)"
+    histYTitles["RecHitsClusVsRecHits_radius_energy_RecHitsClusMaxLayer_FH"] = "#sum RecHits(radius) / #sum RecHits(total) E for FH subdetector(s)"
+    histYTitles["RecHitsClusVsRecHits_radius_energy_RecHitsClusMaxLayer_BH"] = "#sum RecHits(radius) / #sum RecHits(total) E for BH subdetector(s)"
+    histYTitles["RecHitsClusVsRecHits_radius_energy_RecHitsClusMaxLayer_FH+BH"] = "#sum RecHits(radius) / #sum RecHits(total) E for FH+BH subdetector(s)"
+    #
     histYTitles["RecHitsClusVsRecHits_radius_frac_energy_SimCluster_all"] = "#sum RecHits(radius) / #sum RecHits(total) E for all subdetector(s)"
     histYTitles["RecHitsClusVsRecHits_radius_frac_energy_SimCluster_EE"] = "#sum RecHits(radius) / #sum RecHits(total) E for EE subdetector(s)"
     histYTitles["RecHitsClusVsRecHits_radius_frac_energy_SimCluster_FH"] = "#sum RecHits(radius) / #sum RecHits(total) E for FH subdetector(s)"
@@ -192,6 +209,7 @@ def main():
     histXTitles["RecHits_layers_delta_x_eWeight_RecHitsClusMaxLayer"] = "layer"
     histXTitles["RecHits_layers_delta_y_eWeight_RecHitsClusMaxLayer"] = "layer"
     histXTitles["RecHits_layers_delta_d_eWeight_RecHitsClusMaxLayer"] = "layer"
+    histXTitles["RecHits_layers_delta_d2_eWeight_RecHitsClusMaxLayer"] = "layer"
     histXTitles["RecHitsClusVsRecHits_radius_frac_energy_RecHitsClusFirstLayer_all"] = "radius [mm]"
     histXTitles["RecHitsClusVsRecHits_radius_frac_energy_RecHitsClusFirstLayer_EE"] = "radius [mm]"
     histXTitles["RecHitsClusVsRecHits_radius_frac_energy_RecHitsClusFirstLayer_FH"] = "radius [mm]"
@@ -202,6 +220,13 @@ def main():
     histXTitles["RecHitsClusVsRecHits_radius_frac_energy_RecHitsClusMaxLayer_FH"] = "radius [mm]"
     histXTitles["RecHitsClusVsRecHits_radius_frac_energy_RecHitsClusMaxLayer_BH"] = "radius [mm]"
     histXTitles["RecHitsClusVsRecHits_radius_frac_energy_RecHitsClusMaxLayer_FH+BH"] = "radius [mm]"
+    #
+    histXTitles["RecHitsClusVsRecHits_radius_energy_RecHitsClusMaxLayer_all"] = "radius [mm]"
+    histXTitles["RecHitsClusVsRecHits_radius_energy_RecHitsClusMaxLayer_EE"] = "radius [mm]"
+    histXTitles["RecHitsClusVsRecHits_radius_energy_RecHitsClusMaxLayer_FH"] = "radius [mm]"
+    histXTitles["RecHitsClusVsRecHits_radius_energy_RecHitsClusMaxLayer_BH"] = "radius [mm]"
+    histXTitles["RecHitsClusVsRecHits_radius_energy_RecHitsClusMaxLayer_FH+BH"] = "radius [mm]"
+    #
     histXTitles["RecHitsClusVsRecHits_radius_frac_energy_SimCluster_all"] = "radius [mm]"
     histXTitles["RecHitsClusVsRecHits_radius_frac_energy_SimCluster_EE"] = "radius [mm]"
     histXTitles["RecHitsClusVsRecHits_radius_frac_energy_SimCluster_FH"] = "radius [mm]"
@@ -269,7 +294,7 @@ def main():
         rmsVecPfY = {}
         rmsVecPjY = {}
         for sampleName in samples2plot:
-            histDict2D[hist] = fileDict[sampleName].Get(hist)
+            histDict2D[hist] = fileDict[sampleName].Get(hist).Clone("%s_%s" % (hist, sampleName))
             if ((hist.find("RecHitsClus_layers") >= 0) or (hist.find("fracEvents_") >= 0) or (hist.find("layers_N") >= 0) or (hist.find("radius_frac_energy") >=0) or (hist.find("radius_events_eFrac") >= 0)):
                 # divide by number of selected SimClusters/events
                 histDict2D[hist].Scale(1./selectedEvents[sampleName])
@@ -378,6 +403,14 @@ def main():
             for index in range(len(samples2plot)):
                 tBox.DrawLatexNDC(0.5, 0.9-index*0.04, "mean: %5.2f, RMS: %5.2f" % (meanVecPjX[samples2plot[index]], rmsVecPjX[samples2plot[index]]))
         c.SaveAs("%s/%s_pjY.pdf" % (outDir, hist))
+        histStackpfX.Delete()
+        histStackpjX.Delete()
+        histStackpfY.Delete()
+        histStackpjY.Delete()
+        profileX.Reset()
+        projX.Reset()
+        profileY.Reset()
+        projY.Reset()
 
     for hist in histList1D:
         histDict1D = {}
@@ -385,11 +418,18 @@ def main():
         maxY = 0
         meanVec = {}
         rmsVec = {}
+        keysToFind = ["RecHitsClus_layers", "fracEvents_", "layers_N", "radius_frac_energy", "radius_events_eFrac", "layers_delta_d2_eWeight"]
         for sampleName in samples2plot:
-            histDict1D[hist] = fileDict[sampleName].Get(hist).Clone("%s%s" %(hist, sampleName))
-            if ((hist.find("RecHitsClus_layers") >= 0) or (hist.find("fracEvents_") >= 0) or (hist.find("layers_N") >= 0) or (hist.find("radius_frac_energy") >=0) or (hist.find("radius_events_eFrac") >= 0)):
-                # divide by number of selected SimClusters/events
-                histDict1D[hist].Scale(1./selectedEvents[sampleName])
+            histDict1D[hist] = fileDict[sampleName].Get(hist).Clone("%s%s" % (hist, sampleName))
+            for findKey in keysToFind:
+                if (hist.find(findKey) >= 0):
+                    # divide by number of selected SimClusters/events
+                    histDict1D[hist].Scale(1./selectedEvents[sampleName])
+                    # make sure to only divide once
+                    break
+            if (hist.find("RecHitsClusVsRecHits_radius_energy_RecHitsClusMaxLayer") >= 0):
+                divideHist = fileDict[sampleName].Get(hist.replace("radius", "total")).Clone("%s%s" % (hist.replace("radius", "total"), sampleName))
+                histDict1D[hist].Divide(divideHist)
             histDict1D[hist].SetMarkerColor(sampleColours[sampleName])
             histDict1D[hist].SetLineColor(sampleColours[sampleName])
             histDict1D[hist].SetMarkerStyle(sampleMarkerStyle[sampleName])

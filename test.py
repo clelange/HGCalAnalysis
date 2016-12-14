@@ -139,10 +139,12 @@ def getHists():
                 for refKey in lateralReferences:
                     histDict["%s_layers_delta_x%s%s" % (clus, refKey, categ)] = ROOT.TH2F("%s_layers_delta_x%s%s" % (clus, refKey, categ), "%s_layers_delta_x%s%s;layers;#Delta x [mm]" % (clus, refKey, categ), 53, 0.5, 53.5, 100, -500, 500)
                     histDict["%s_layers_delta_y%s%s" % (clus, refKey, categ)] = ROOT.TH2F("%s_layers_delta_y%s%s" % (clus, refKey, categ), "%s_layers_delta_y%s%s;layers;#Delta y [mm]" % (clus, refKey, categ), 53, 0.5, 53.5, 100, -500, 500)
-                    histDict["%s_layers_delta_d%s%s" % (clus, refKey, categ)] = ROOT.TH2F("%s_layers_delta_d%s%s" % (clus, refKey, categ), "%s_layers_delta_d%s%s;layers;#Delta d [mm]" % (clus, refKey, categ), 53, 0.5, 53.5, 100, 0, 1000)
+                    histDict["%s_layers_delta_d%s%s" % (clus, refKey, categ)] = ROOT.TH2F("%s_layers_delta_d%s%s" % (clus, refKey, categ), "%s_layers_delta_d%s%s;layers;#Delta d [mm]" % (clus, refKey, categ), 53, 0.5, 53.5, 100, 0, 500)
+                    histDict["%s_layers_delta_d2%s%s" % (clus, refKey, categ)] = ROOT.TH2F("%s_layers_delta_d2%s%s" % (clus, refKey, categ), "%s_layers_delta_d2%s%s;layers;#Delta d^{2} [mm^{2}]" % (clus, refKey, categ), 53, 0.5, 53.5, 100, 0, 500)
                     histDict["%s_layers_delta_x_eWeight%s%s" % (clus, refKey, categ)] = ROOT.TH2F("%s_layers_delta_x_eWeight%s%s" % (clus, refKey, categ), "%s_layers_delta_x_eWeight%s%s;layers;#Delta x [mm]" % (clus, refKey, categ), 53, 0.5, 53.5, 100, -500, 500)
                     histDict["%s_layers_delta_y_eWeight%s%s" % (clus, refKey, categ)] = ROOT.TH2F("%s_layers_delta_y_eWeight%s%s" % (clus, refKey, categ), "%s_layers_delta_y_eWeight%s%s;layers;#Delta y [mm]" % (clus, refKey, categ), 53, 0.5, 53.5, 100, -500, 500)
-                    histDict["%s_layers_delta_d_eWeight%s%s" % (clus, refKey, categ)] = ROOT.TH2F("%s_layers_delta_d_eWeight%s%s" % (clus, refKey, categ), "%s_layers_delta_d_eWeight%s%s;layers;#Delta d [mm]" % (clus, refKey, categ), 53, 0.5, 53.5, 100, 0, 1000)
+                    histDict["%s_layers_delta_d_eWeight%s%s" % (clus, refKey, categ)] = ROOT.TH2F("%s_layers_delta_d_eWeight%s%s" % (clus, refKey, categ), "%s_layers_delta_d_eWeight%s%s;layers;#Delta d [mm]" % (clus, refKey, categ), 53, 0.5, 53.5, 100, 0, 500)
+                    histDict["%s_layers_delta_d2_eWeight%s%s" % (clus, refKey, categ)] = ROOT.TH2F("%s_layers_delta_d2_eWeight%s%s" % (clus, refKey, categ), "%s_layers_delta_d2_eWeight%s%s;layers;#Delta d^{2} [mm^{2}]" % (clus, refKey, categ), 53, 0.5, 53.5, 100, 0, 500)
 
         histDict["%s_dRtoSeed" % clus] = ROOT.TH1F(
             "%s_dRtoSeed" % clus, "%s_dRtoSeed;#Delta R to seed" % clus, 100, -0.2, 0.2)
@@ -206,6 +208,8 @@ def getHists():
             histDict["SimVsRecHits_radius_frac_energy_%s_%s" % (refKey, detect)] = ROOT.TH1F("SimVsRecHits_radius_frac_energy_%s_%s" % (refKey, detect), "SimVsRecHits_radius_frac_energy_%s_%s;radius [mm];E fraction (%s)" % (refKey, detect, detect), 100, -2.5, 497.5)
             # also make plots relative to RecHitCluster sum in a subdetector
             histDict["RecHitsClusVsRecHits_radius_frac_energy_%s_%s" % (refKey, detect)] = ROOT.TH1F("RecHitsClusVsRecHits_radius_frac_energy_%s_%s" % (refKey, detect), "RecHitsClusVsRecHits_radius_frac_energy_%s_%s;radius [mm];E fraction rel. to %s (%s)" % (refKey, detect, refKey, detect), 100, -2.5, 497.5)
+            histDict["RecHitsClusVsRecHits_radius_energy_%s_%s" % (refKey, detect)] = ROOT.TH1F("RecHitsClusVsRecHits_radius_energy_%s_%s" % (refKey, detect), "RecHitsClusVsRecHits_radius_energy_%s_%s;radius [mm];E not rel. to %s (%s)" % (refKey, detect, refKey, detect), 100, -2.5, 497.5)
+            histDict["RecHitsClusVsRecHits_total_energy_%s_%s" % (refKey, detect)] = ROOT.TH1F("RecHitsClusVsRecHits_total_energy_%s_%s" % (refKey, detect), "RecHitsClusVsRecHits_total_energy_%s_%s;radius [mm];E total %s (%s)" % (refKey, detect, refKey, detect), 100, -2.5, 497.5)
             for eFrac in np.arange(0.5, 1.01, 0.05):
                 histDict["SimVsRecHits_radius_events_eFrac%d_%s_%s" % (eFrac*100, refKey, detect)] = ROOT.TH1F("SimVsRecHits_radius_events_eFrac%d_%s_%s" % (eFrac*100, refKey, detect), "SimVsRecHits_radius_events_eFrac%d_%s_%s;radius [mm];events (%s)" % (eFrac*100, refKey, detect, detect), 100, -2.5, 497.5)
                 histDict["RecHitsClusVsRecHits_radius_events_eFrac%d_%s_%s" % (eFrac*100, refKey, detect)] = ROOT.TH1F("RecHitsClusVsRecHits_radius_events_eFrac%d_%s_%s" % (eFrac*100, refKey, detect), "RecHitsClusVsRecHits_radius_events_eFrac%d_%s_%s;radius [mm];events (%s)" % (eFrac*100, refKey, detect, detect), 100, -2.5, 497.5)
@@ -436,10 +440,12 @@ def processSample(chain, nEvents, outDir, maxLayer, applyRecHitsRelPtCut, simClu
                         distanceSquared = (thisHit_x-refObject[0])**2 + (thisHit_y-refObject[1])**2
                         histDict["RecHits_layers_delta_x_%s" % refKey].Fill(thisHit.layer, refObject[0] - hitx)
                         histDict["RecHits_layers_delta_y_%s" % refKey].Fill(thisHit.layer, refObject[1] - hity)
-                        histDict["RecHits_layers_delta_d_%s" % refKey].Fill(thisHit.layer, distanceSquared)
+                        histDict["RecHits_layers_delta_d_%s" % refKey].Fill(thisHit.layer, math.sqrt(distanceSquared))
+                        histDict["RecHits_layers_delta_d2_%s" % refKey].Fill(thisHit.layer, distanceSquared)
                         histDict["RecHits_layers_delta_x_eWeight_%s" % refKey].Fill(thisHit.layer, refObject[0] - thisHit_x, thisHit.energy)
                         histDict["RecHits_layers_delta_y_eWeight_%s" % refKey].Fill(thisHit.layer, refObject[1] - thisHit_y, thisHit.energy)
                         histDict["RecHits_layers_delta_d_eWeight_%s" % refKey].Fill(thisHit.layer, math.sqrt(distanceSquared), thisHit.energy)
+                        histDict["RecHits_layers_delta_d2_eWeight_%s" % refKey].Fill(thisHit.layer, distanceSquared, thisHit.energy)
                         for radius in range(1, maxRadius, 5):
                             if (distanceSquared < radius**2):
                                 tmpTLV = ROOT.TLorentzVector()
@@ -451,6 +457,8 @@ def processSample(chain, nEvents, outDir, maxLayer, applyRecHitsRelPtCut, simClu
                             # also make plots relative to RecHitCluster sum in a subdetector
                             if (recHitVectors[detect].E() != 0):
                                 histDict["RecHitsClusVsRecHits_radius_frac_energy_%s_%s" % (refKey, detect)].Fill(radius, recHitVectorsRadius[detect][radius].E()/recHitVectors[detect].E())
+                                histDict["RecHitsClusVsRecHits_radius_energy_%s_%s" % (refKey, detect)].Fill(radius, recHitVectorsRadius[detect][radius].E())
+                                histDict["RecHitsClusVsRecHits_total_energy_%s_%s" % (refKey, detect)].Fill(radius, recHitVectors[detect].E())
                         for eFrac in np.arange(0.5, 1.01, 0.05):
                             for radius in range(1, maxRadius, 5):
                                 if (recHitVectorsRadius[detect][radius].E()/simCl.energy > eFrac):
@@ -469,10 +477,14 @@ def processSample(chain, nEvents, outDir, maxLayer, applyRecHitsRelPtCut, simClu
     histDict["SimClus_eta_eff"].GetYaxis().SetTitle("eff.")
     # normalisation of a few histograms, only makes sense when producing plots directly:
     if not rootOnly:
+        keysToFind = ["RecHitsClus_layers", "fracEvents_", "layers_N", "radius_frac_energy", "radius_events_eFrac", "RecHitsClusVsRecHits_radius_energy", "RecHitsClusVsRecHits_total_energy", "layers_delta_d2_eWeight"]
         for key, item in histDict.items():
-            if ((key.find("RecHitsClus_layers") >= 0) or (key.find("fracEvents_") >= 0) or (key.find("layers_N") >= 0) or (key.find("radius_frac_energy") >=0) or (key.find("radius_events_eFrac") >= 0)):
-                # divide by number of selected SimClusters/events
-                item.Scale(1./selectedEvents)
+            for findKey in keysToFind:
+                if (key.find(findKey) >= 0):
+                    # divide by number of selected SimClusters/events
+                    item.Scale(1./selectedEvents)
+                    # make sure to only divide once
+                    break
     histDict["selectedEvents"].Fill(1, selectedEvents)
     HGCalHelpers.saveHistograms(histDict, canvas, outDir, imgType, logScale=False, rootOnly=rootOnly)
 
