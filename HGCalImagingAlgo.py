@@ -11,6 +11,8 @@ from scipy import spatial
 # needed to extend the maximum recursion limit, for large data sets
 import sys
 sys.setrecursionlimit(100000)
+# depth of the KDTree before brute force is applied
+leafsize=100000
 
 ## basic setup for testing
 # 2D clustering
@@ -24,7 +26,7 @@ minClusters = 3
 # det. layers to consider
 det_layers = 40
 # others
-verbosityLevel = 0 # 0 - only basic info (default); 1 - additional info; 2 - detailed info printed
+verbosityLevel = 1 # 0 - only basic info (default); 1 - additional info; 2 - detailed info printed
 
 # definition of Hexel element
 class Hexel:
@@ -110,7 +112,7 @@ def calculateLocalDensity(nd, lp):
     maxdensity = 0
     for iNode in nd:
         # search in a circle of radius delta_c (not identical to search in the box delta_c)
-        found = lp.query_ball_point([iNode.x,iNode.y],delta_c)
+        found = lp.query_ball_point([iNode.x,iNode.y],delta_c*pow(2,0.5))
         for j in found:
             if(distanceReal2(iNode,nd[j]) < delta_c*delta_c):
                 iNode.rho += nd[j].weight
@@ -168,10 +170,8 @@ def findAndAssignClusters(nd, points_0, points_1, lp, maxdensity):
 #        print "index rs[i]: ", rs[i], ", rho: ", nd[rs[i]].rho, " delta: ", nd[rs[i]].delta, ", nearestHigher: ", nd[rs[i]].nearestHigher, ", eta: ", nd[rs[i]].eta, ", phi: ", nd[rs[i]].phi
 
     for i in range(0,len(nd)):
-        if(nd[ds[i]].delta < delta_c):
-            break # no more cluster centers to be looked at
-        if(nd[ds[i]].rho < maxdensity/kappa):
-            continue # skip this as a potential cluster center because it fails the density cut
+        if(nd[ds[i]].delta < delta_c): break # no more cluster centers to be looked at
+        if(nd[ds[i]].rho < maxdensity/kappa): continue # skip this as a potential cluster center because it fails the density cut
         nd[ds[i]].clusterIndex = clusterIndex
         if (verbosityLevel>=2):
             print "Adding new cluster with index ", clusterIndex
@@ -191,13 +191,13 @@ def findAndAssignClusters(nd, points_0, points_1, lp, maxdensity):
 
     # assign points closer than dc to other clusters to border region and find critical border density
     rho_b = [0. for i in range(0,clusterIndex)]
-    lp = spatial.KDTree(zip(points_0, points_1), leafsize=1000) # new KDTree
+    lp = spatial.KDTree(zip(points_0, points_1), leafsize=leafsize) # new KDTree
     # now loop on all hits again :( and check: if there are hits from another cluster within d_c -> flag as border hit
     for iNode in nd:
         ci = iNode.clusterIndex
         flag_isolated = True
         if(ci != -1):
-            found = lp.query_ball_point([iNode.x,iNode.y],delta_c)
+            found = lp.query_ball_point([iNode.x,iNode.y],delta_c*pow(2,0.5))
             for j in range(1,len(found)):
                 # check if the hit is not within d_c of another cluster
                 if(nd[j].clusterIndex!=-1):
@@ -216,6 +216,10 @@ def findAndAssignClusters(nd, points_0, points_1, lp, maxdensity):
         # check if this border hit has density larger than the current rho_b and update
         if(iNode.isBorder and rho_b[ci] < iNode.rho):
             rho_b[ci] = iNode.rho
+
+#    # debugging
+#    for oi in range(1,len(nd)): print "hit index: ", rs[oi], ", weight: ", nd[rs[oi]].weight, ", density rho: ", nd[rs[oi]].rho, ", delta: ", nd[rs[oi]].delta, ", nearestHigher: ", nd[rs[oi]].nearestHigher, ", clusterIndex: ", nd[rs[oi]].clusterIndex
+
 
     # flag points in cluster with density < rho_b as halo points, then fill the cluster vector
     for iNode in nd:
@@ -239,16 +243,18 @@ def makeClusters(rHitsCollection, ecut = ecut):
 
     # loop over all hits and create the Hexel structure, skip energies below ecut
     for rHit in rHitsCollection:
+#        if (rHit.layer != 15): continue # current protection
         if (rHit.layer >= det_layers): continue # current protection
         if(rHit.energy < ecut): continue
         points[rHit.layer].append(Hexel(rHit))
 
     # loop over all layers, and for each layer create a list of clusters
     for layer in range(0, det_layers):
+#        if (layer != 15): continue # current protection
         if (len(points[layer]) == 0): continue # protection
         points_0 = [hex.x for hex in points[layer]] # list of hexels'coordinate 0 for current layer
         points_1 = [hex.y for hex in points[layer]] # list of hexels'coordinate 1 for current layer
-        hit_kdtree = spatial.KDTree(zip(points_0, points_1), leafsize=1000) # create KDTree
+        hit_kdtree = spatial.KDTree(zip(points_0, points_1), leafsize=leafsize) # create KDTree
         maxdensity = calculateLocalDensity(points[layer], hit_kdtree) # get the max density
         #print "layer: ", layer, ", max density: ", maxdensity, ", total hits: ", len(points[layer])
         calculateDistanceToHigher(points[layer], hit_kdtree) # get distances to the nearest higher density
@@ -259,7 +265,7 @@ def makeClusters(rHitsCollection, ecut = ecut):
     return clusters
 
 # get basic clusters from the list of 2D clusters
-def getClusters(clusters):
+def getClusters(clusters, verbosityLevel = verbosityLevel):
     # init the lists
     thisCluster = []
     clusters_v = []
@@ -277,8 +283,8 @@ def getClusters(clusters):
                 print "Layer: ", layer, "| 2D-cluster index: ", index, ", No. of cells = ", len(cluster), ", Energy  = ", energy, ", Phi = ", position.phi(), ", Eta = ", position.eta(), ", z = ", position.z()
                 for iNode in cluster:
                     if (not iNode.isHalo):
-                        print "Layer: ", layer, "|                    ",       "  detid = ", iNode.detid, ", weight  = ", iNode.weight, ", phi = ", iNode.phi, ", eta = ", iNode.eta
-
+#                        print "Layer: ", layer, "|                    ",       "  detid = ", iNode.detid, ", weight  = ", iNode.weight, ", phi = ", iNode.phi, ", eta = ", iNode.eta
+                        pass
             clusters_v.append(BasicCluster(energy = energy, position = position, thisCluster = cluster))
             index += 1
         layer += 1
