@@ -6,9 +6,9 @@ import HGCalImagingAlgo
 
 ## basic setup for testing
 # 2D clustering
-ecut = 0.060
+ecut = 0.060 # need to be changed to ecut = 3. in case it's given wrt the noise and not in absolute units
 # multi-clustering
-multiclusterRadius = 0.015
+multiclusterRadii = [2.,2.,2.] # it's in cartesian coordiantes, per detector, used to be one value for all dets in eta/phi coordinates: 0.015
 minClusters = 3
 # allowed events/layers for testing/histograming
 allowedRangeLayers = [] # layer considered for histograming e.g. [10, 15], empty for none
@@ -226,7 +226,7 @@ def main():
         # produce 2D clusters with stand-alone algo, out of all raw rechits
         clusters2D_rerun = HGCalImagingAlgo.makeClusters(event.rechits_raw, ecut = ecut) # hexels per-layer, per 2D cluster
         # produce multi-clusters with stand-alone algo, out of all 2D clusters
-        multiClustersList_rerun = HGCalImagingAlgo.makePreClusters(clusters2D_rerun, multiclusterRadius = multiclusterRadius, minClusters = minClusters) # flat list of multi-clusters (as basic clusters)
+        multiClustersList_rerun = HGCalImagingAlgo.makePreClusters(clusters2D_rerun, multiclusterRadii = multiclusterRadii, minClusters = minClusters) # flat list of multi-clusters (as basic clusters)
 
         # get list of hexeles from 2D clusters produced with stand-alone algo
         clusters2DList_rerun = HGCalImagingAlgo.getClusters(clusters2D_rerun, verbosityLevel = 0) # flat list of 2D clusters (as basic clusters)

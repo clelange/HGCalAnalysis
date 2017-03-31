@@ -16,21 +16,31 @@ leafsize=100000
 
 ## basic setup for testing
 # 2D clustering
-delta_c = 2.0
-kappa = 10.
-ecut = 0.060
+deltac = [2.,2.,2.] # it used to be one value for all dets: delta_c = 2.
+kappa = 9.
+ecut = 3. # times the noise, it used to be in absolute units, e.g. 0.060 (still not implemented, use ecut = 0.060 in teh meantime)
+sigma2 = 1.0
+dependSensor = True
+# Have to understeand what to do with various parameters used for calculating the noise levels for a given sensor (and whether to use them):
+# dEdXweights = cms.vdouble(dEdX_weights),
+# thicknessCorrection = cms.vdouble(HGCalRecHit.thicknessCorrection),
+# fcPerMip = cms.vdouble(HGCalUncalibRecHit.HGCEEConfig.fCPerMIP),
+# fcPerEle = cms.double(fC_per_ele),
+# nonAgedNoises = cms.vdouble(nonAgedNoises),
+# noiseMip = hgchebackDigitizer.digiCfg.noise_MIP
+
 # multi-clustering
-multiclusterRadius = 0.015
-realSpaceCone = False
+multiclusterRadii = [2.,2.,2.] # it's in cartesian coordiantes, per detector, used to be one value for all dets in eta/phi coordinates: 0.015
+realSpaceCone = True # used to be False
 minClusters = 3
 # det. layers to consider
-det_layers = 40
+maxlayer = 52 # 40
 # others
 verbosityLevel = 1 # 0 - only basic info (default); 1 - additional info; 2 - detailed info printed
 
 # definition of Hexel element
 class Hexel:
-    def __init__(self, rHit = None):
+    def __init__(self, rHit = None, isHalfCell = None, sigmaNoise = None, thickness_in = None):
         self.eta = 0
         self.phi = 0
         self.x = 0
@@ -46,6 +56,8 @@ class Hexel:
         self.isBorder = False
         self.isHalo = False
         self.clusterIndex = -1
+        self.sigmaNoise = 0.
+        self.thickness = 0.
         if rHit is not None:
             self.eta = rHit.eta
             self.phi = rHit.phi
@@ -54,6 +66,12 @@ class Hexel:
             self.z = rHit.z
             self.weight = rHit.energy
             self.detid = rHit.detid
+        if isHalfCell is not None:
+            self.isHalfCell = isHalfCell
+        if sigmaNoise is not None:
+            self.sigmaNoise = sigmaNoise
+        if sigmaNoise is not None:
+            self.thickness = thickness
     def __gt__(self, other_rho):
         return self.rho > other_rho
 
@@ -108,8 +126,12 @@ def calculatePosition(cluster):
 #    return x/total_weight, y/total_weight, z/total_weight
 
 # calculate max local density in a 2D plane of hexels
-def calculateLocalDensity(nd, lp):
+def calculateLocalDensity(nd, lp, layer):
     maxdensity = 0
+    delta_c = 9999.
+    if(layer<=28): delta_c = deltac[0]
+    elif(layer<=40): delta_c = deltac[1]
+    else: delta_c = deltac[2]
     for iNode in nd:
         # search in a circle of radius delta_c (not identical to search in the box delta_c)
         found = lp.query_ball_point([iNode.x,iNode.y],delta_c*pow(2,0.5))
@@ -160,14 +182,16 @@ def calculateDistanceToHigher(nd, lp):
     return maxdensity
 
 # find cluster centers that satisfy delta & maxdensity/kappa criteria, and assign coresponding hexels
-def findAndAssignClusters(nd, points_0, points_1, lp, maxdensity):
+def findAndAssignClusters(nd, points_0, points_1, lp, maxdensity, layer):
     clusterIndex = 0
     #sort Hexels by decreasing local density and by decreasing distance to higher
     rs = sorted(range(len(nd)), key=lambda k: nd[k].rho, reverse=True) # indices sorted by decreasing rho
     ds = sorted(range(len(nd)), key=lambda k: nd[k].delta, reverse=True) # sort in decreasing distance to higher
     
-#    for i in range(0,len(nd)):
-#        print "index rs[i]: ", rs[i], ", rho: ", nd[rs[i]].rho, " delta: ", nd[rs[i]].delta, ", nearestHigher: ", nd[rs[i]].nearestHigher, ", eta: ", nd[rs[i]].eta, ", phi: ", nd[rs[i]].phi
+    delta_c = 9999.
+    if(layer<=28): delta_c = deltac[0]
+    elif(layer<=40): delta_c = deltac[1]
+    else: delta_c = deltac[2]
 
     for i in range(0,len(nd)):
         if(nd[ds[i]].delta < delta_c): break # no more cluster centers to be looked at
@@ -235,30 +259,37 @@ def findAndAssignClusters(nd, points_0, points_1, lp, maxdensity):
 
     return current_clusters
 
-# make 2D clusters out of rechists (need to introduce class with input params: delta_c, kappa, ecut, ...)
-def makeClusters(rHitsCollection, ecut = ecut):
-    # init 2D hexels lists
-    points = [[] for i in range(0,det_layers)] # initialise list of per-layer-lists of hexels
-    clusters = [[] for i in range(0,det_layers)] # initialise list of per-layer-clusters
-
+# make list of Hexels out of rechits (---> still need to introduce dependSensor options for different thickness, sigmaNoise, etc.)
+def populate(rHitsCollection, ecut = ecut):
+    # init 2D hexels
+    points = [[] for i in range(0,maxlayer)] # initialise list of per-layer-lists of hexels
+    
     # loop over all hits and create the Hexel structure, skip energies below ecut
     for rHit in rHitsCollection:
-#        if (rHit.layer != 15): continue # current protection
-        if (rHit.layer >= det_layers): continue # current protection
+        if (rHit.layer >= maxlayer): continue # current protection
         if(rHit.energy < ecut): continue
         points[rHit.layer].append(Hexel(rHit))
 
+    return points
+
+# make 2D clusters out of rechists (need to introduce class with input params: delta_c, kappa, ecut, ...)
+def makeClusters(rHitsCollection, ecut = ecut):
+    # init 2D cluster lists
+    clusters = [[] for i in range(0,maxlayer)] # initialise list of per-layer-clusters
+
+    # get the list of Hexels out of raw rechits
+    points = populate(rHitsCollection, ecut = ecut)
+    
     # loop over all layers, and for each layer create a list of clusters
-    for layer in range(0, det_layers):
-#        if (layer != 15): continue # current protection
+    for layer in range(0, maxlayer):
         if (len(points[layer]) == 0): continue # protection
         points_0 = [hex.x for hex in points[layer]] # list of hexels'coordinate 0 for current layer
         points_1 = [hex.y for hex in points[layer]] # list of hexels'coordinate 1 for current layer
         hit_kdtree = spatial.KDTree(zip(points_0, points_1), leafsize=leafsize) # create KDTree
-        maxdensity = calculateLocalDensity(points[layer], hit_kdtree) # get the max density
+        maxdensity = calculateLocalDensity(points[layer], hit_kdtree, layer) # get the max density
         #print "layer: ", layer, ", max density: ", maxdensity, ", total hits: ", len(points[layer])
         calculateDistanceToHigher(points[layer], hit_kdtree) # get distances to the nearest higher density
-        clusters[layer] = findAndAssignClusters(points[layer], points_0, points_1, hit_kdtree, maxdensity) # get clusters per layer
+        clusters[layer] = findAndAssignClusters(points[layer], points_0, points_1, hit_kdtree, maxdensity, layer) # get clusters per layer
         #print "found: ", len(clusters[layer]), " clusters."
 
     # return the clusters list
@@ -323,7 +354,7 @@ def getMultiClusterEnergy(multi_clu):
     return acc
 
 # make multi-clusters stasrting from the 2D clusters
-def makePreClusters(clusters, multiclusterRadius = multiclusterRadius, minClusters = minClusters):
+def makePreClusters(clusters, multiclusterRadii = multiclusterRadii, minClusters = minClusters):
     # get clusters in one list (just following original approach)
     thecls = getClusters(clusters)
 
@@ -348,6 +379,11 @@ def makePreClusters(clusters, multiclusterRadius = multiclusterRadius, minCluste
                         distanceCheck = distanceReal2(thecls[es[i]],thecls[es[j]])
                     else:
                         distanceCheck = distanceDR2(thecls[es[i]],thecls[es[j]])
+                    # ---> need to get the "layer"of the current 2D cluster thecls[es[i]] in order to set the multiclusterRadius value below
+                    multiclusterRadius = 9999.
+                    if(layer<=28): multiclusterRadius = multiclusterRadii[0]*multiclusterRadii[0]
+                    elif(layer<=40): multiclusterRadius = multiclusterRadii[1]*multiclusterRadii[1]
+                    else: multiclusterRadius = multiclusterRadii[2]*multiclusterRadii[2]
                     if( distanceCheck < multiclusterRadius*multiclusterRadius and int(thecls[es[i]].z*vused[i])>0 ):
                         temp.append(thecls[es[j]])
                         vused[j] = vused[i]
