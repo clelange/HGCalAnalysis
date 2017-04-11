@@ -77,22 +77,22 @@ class RecHitCalibration:
         # https://github.com/cms-sw/cmssw/blob/CMSSW_9_0_X/SimCalorimetry/HGCalSimProducers/python/hgcalDigitizer_cfi.py#L127
         self.noise_MIP = 0.2
 
-        def MeVperMIP(self, layer, thicknessIndex):
-            if layer > 40:
-                # no thickness correction for BH
-                return self.dEdX_weights[layer]
-            else:
-                return self.dEdX_weights[layer]/self.thicknessCorrection[thicknessIndex]
+    def MeVperMIP(self, layer, thicknessIndex):
+        if layer > 40:
+            # no thickness correction for BH
+            return self.dEdX_weights[layer]
+        else:
+            return self.dEdX_weights[layer]/self.thicknessCorrection[thicknessIndex]
 
-        def MIPperGeV(self, layer, thicknessIndex):
-            return 1000./MeVperMIP(layer, thicknessIndex)
+    def MIPperGeV(self, layer, thicknessIndex):
+        return 1000./MeVperMIP(layer, thicknessIndex)
 
-        def sigmaNoiseMIP(self, layer, thicknessIndex):
-            if layer > 40:
-                # for BH, sigmaNoiseMIP = noise_MIP
-                return self.noise_MIP
-            else:
-                return self.fC_per_ele * self.nonAgedNoises(thicknessIndex) / self.fCPerMIP(thicknessIndex)
+    def sigmaNoiseMIP(self, layer, thicknessIndex):
+        if layer > 40:
+            # for BH, sigmaNoiseMIP = noise_MIP
+            return self.noise_MIP
+        else:
+            return self.fC_per_ele * self.nonAgedNoises[thicknessIndex] / self.fCPerMIP[thicknessIndex]
 
-        def sigmaNoiseMeV(self, layer, thicknessIndex):
-            return self.sigmaNoiseMIP(thicknessIndex) * self.MeVperMIP(layer, thicknessIndex)
+    def sigmaNoiseMeV(self, layer, thicknessIndex):
+        return self.sigmaNoiseMIP(layer, thicknessIndex) * self.MeVperMIP(layer, thicknessIndex)

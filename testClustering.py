@@ -2,13 +2,14 @@
 import ROOT
 import numpy as np
 import HGCalHelpers
-import HGCalImagingAlgo
+from HGCalImagingAlgo import *
 
 ## basic setup for testing
 # 2D clustering
 ecut = 0.060 # need to be changed to ecut = 3. in case it's given wrt the noise and not in absolute units
+deltac = [2.,2.,2.]
 # multi-clustering
-multiclusterRadii = [2.,2.,2.] # it's in cartesian coordiantes, per detector, used to be one value for all dets in eta/phi coordinates: 0.015
+multiclusterRadii = [.015,.015,.015] # it's in cartesian coordiantes, per detector, used to be one value for all dets in eta/phi coordinates: 0.015
 minClusters = 3
 # allowed events/layers for testing/histograming
 allowedRangeLayers = [] # layer considered for histograming e.g. [10, 15], empty for none
@@ -194,17 +195,17 @@ def main():
     histDict = {}
 
     # get sample/tree
-    inFile = ROOT.TFile.Open("partGun_PDGid22_x96_E20.0To20.0_NTUP_1.root")
+    inFile = ROOT.TFile.Open("/eos/cms/store/cmst3/group/hgcal/CMG_studies/Production/partGun_predragm_PDGid22_nPart1_E20_cmssw900pre2_20170116_ReReco/NTUP/partGun_PDGid22_x96_E20.0To20.0_NTUP_1.root")
     chain = inFile.Get("ana/hgc")
     sampleEvents = chain.GetEntries()
     print "Opening TTree: ", chain
-    print "Number of vents: ", sampleEvents
+    print "Number of events: ", sampleEvents
 
     # start event loop
     multiCluster0_engDiff = [] # for comparions
     for currentEvent, event in enumerate(chain):
         if (not currentEvent in allowedRangeEvents): continue # testing limitation
-        print "\ncurrentEvent: ", currentEvent
+        print "\nCurrent event: ", currentEvent
         
         # get list of rechist associated to sim-cluster hits
         rHitsSimAssoc = getRecHitsSimAssoc(event.rechits_raw, event.simcluster)
@@ -223,13 +224,14 @@ def main():
         multiClustersList_reco = [multiCluster for multiCluster in event.multicluster]
 
         ### Imaging algo run as stand-alone (python)
+        HGCalAlgo = HGCalImagingAlgo(ecut = ecut, deltac = deltac, multiclusterRadii = multiclusterRadii, minClusters = minClusters)
         # produce 2D clusters with stand-alone algo, out of all raw rechits
-        clusters2D_rerun = HGCalImagingAlgo.makeClusters(event.rechits_raw, ecut = ecut) # hexels per-layer, per 2D cluster
+        clusters2D_rerun = HGCalAlgo.makeClusters(event.rechits_raw) # hexels per-layer, per 2D cluster
         # produce multi-clusters with stand-alone algo, out of all 2D clusters
-        multiClustersList_rerun = HGCalImagingAlgo.makePreClusters(clusters2D_rerun, multiclusterRadii = multiclusterRadii, minClusters = minClusters) # flat list of multi-clusters (as basic clusters)
+        multiClustersList_rerun = HGCalAlgo.makePreClusters(clusters2D_rerun) # flat list of multi-clusters (as basic clusters)
 
         # get list of hexeles from 2D clusters produced with stand-alone algo
-        clusters2DList_rerun = HGCalImagingAlgo.getClusters(clusters2D_rerun, verbosityLevel = 0) # flat list of 2D clusters (as basic clusters)
+        clusters2DList_rerun = HGCalAlgo.getClusters(clusters2D_rerun, verbosityLevel = 0) # flat list of 2D clusters (as basic clusters)
         hexelsClustered_rerun = [iNode for bClust in clusters2DList_rerun for iNode in bClust.thisCluster if not iNode.isHalo]
         # histograming of clustered hexels
         histDict = histHexelsClustered(hexelsClustered_rerun, currentEvent, histDict, tag = "clustHex_", zoomed = True)
