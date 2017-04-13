@@ -1,6 +1,7 @@
 ##############################################################################
-# Implementation of HGCalImagingAlgo functionality (stand-alone)
-# based on the CMSSW implementation mainly in RecoLocalCalo/HGCalRecAlgos
+# Implementation of (stand-alone) functionalities of HGCalImagingAlgo,
+# HGCal3DClustering, and HGCalDepthPreClusterer based on
+# their CMSSW implementations mainly in RecoLocalCalo/HGCalRecAlgos
 ##############################################################################
 # needed for ROOT funcs/types
 import ROOT
@@ -42,6 +43,7 @@ class Hexel:
             self.z = rHit.z
             self.weight = rHit.energy
             self.detid = rHit.detid
+            self.layer = rHit.layer
         if isHalfCell is not None:
             self.isHalfCell = isHalfCell
         if sigmaNoise is not None:
@@ -84,7 +86,7 @@ class HGCalImagingAlgo:
     # depth of the KDTree before brute force is applied
     leafsize=100000
     # det. layers to consider
-    maxlayer = 40 # should include BH (layers 40 - 52)
+    maxlayer = 40 # should include BH (layers 41 - 52)
     # sensor dependance or not
     dependSensor = False
     
@@ -117,7 +119,7 @@ class HGCalImagingAlgo:
             self.multiclusterRadii = multiclusterRadii
         
         # others
-        verbosityLevel = 1 # 0 - only basic info (default); 1 - additional info; 2 - detailed info printed
+        verbosityLevel = 0 # 0 - only basic info (default); 1 - additional info; 2 - detailed info printed
         if verbosityLevel is not None:
             self.verbosityLevel = verbosityLevel
 
@@ -129,7 +131,7 @@ class HGCalImagingAlgo:
         elif(layer<=40): delta_c = self.deltac[1]
         else: delta_c = self.deltac[2]
         for iNode in nd:
-            # search in a circle of radius delta_c*sqrt(2) (not identical to search in the box delta_c)
+            # search in a circle of radius delta_c or delta_c*sqrt(2) (not identical to search in the box delta_c)
             found = lp.query_ball_point([iNode.x,iNode.y],delta_c)
 #            found = lp.query_ball_point([iNode.x,iNode.y],delta_c*pow(2,0.5))
             for j in found:
@@ -140,7 +142,7 @@ class HGCalImagingAlgo:
         return maxdensity
 
     # calculate distance to the nearest hit with higher density (still does not use KDTree)
-    def calculateDistanceToHigher(self, nd, lp):
+    def calculateDistanceToHigher(self, nd):
         #sort vector of Hexels by decreasing local density
         rs = sorted(range(len(nd)), key=lambda k: nd[k].rho, reverse=True)
 
@@ -220,7 +222,7 @@ class HGCalImagingAlgo:
             ci = iNode.clusterIndex
             flag_isolated = True
             if(ci != -1):
-                # search in a circle of radius delta_c*sqrt(2) (not identical to search in the box delta_c)
+                # search in a circle of radius delta_c or delta_c*sqrt(2) (not identical to search in the box delta_c)
                 found = lp.query_ball_point([iNode.x,iNode.y],delta_c)
 #                found = lp.query_ball_point([iNode.x,iNode.y],delta_c*pow(2,0.5))
                 for j in range(1,len(found)):
@@ -245,7 +247,6 @@ class HGCalImagingAlgo:
     #    # debugging
     #    for oi in range(1,len(nd)): print "hit index: ", rs[oi], ", weight: ", nd[rs[oi]].weight, ", density rho: ", nd[rs[oi]].rho, ", delta: ", nd[rs[oi]].delta, ", nearestHigher: ", nd[rs[oi]].nearestHigher, ", clusterIndex: ", nd[rs[oi]].clusterIndex
 
-
         # flag points in cluster with density < rho_b as halo points, then fill the cluster vector
         for iNode in nd:
             ci = iNode.clusterIndex
@@ -265,11 +266,11 @@ class HGCalImagingAlgo:
         # adjust ecut if necessary
         if ecut is None: ecut = self.ecut
         # init 2D hexels
-        points = [[] for i in range(0,self.maxlayer)] # initialise list of per-layer-lists of hexels
+        points = [[] for i in range(0,2*(self.maxlayer+1))] # initialise list of per-layer-lists of hexels
         
         # loop over all hits and create the Hexel structure, skip energies below ecut
         for rHit in rHitsCollection:
-            if (rHit.layer >= self.maxlayer): continue # current protection
+            if (rHit.layer > self.maxlayer): continue # current protection
             # energy treshold dependent on sensor
             if(self.dependSensor):
                 thickIndex = -1
@@ -287,7 +288,9 @@ class HGCalImagingAlgo:
                 if(rHit.energy < ecut*sigmaNoise): continue #this sets the ZS threshold at ecut times the sigma noise for the sensor
             # energy treshold not dependent on sensor
             if((not self.dependSensor) and rHit.energy < ecut): continue
-            points[rHit.layer].append(Hexel(rHit))
+            # organise layers accoring to the sgn(z)
+            layerID = rHit.layer + (rHit.z>0)*(self.maxlayer+1) # +1 - yes or no?
+            points[layerID].append(Hexel(rHit))
 
         return points
 
@@ -296,21 +299,22 @@ class HGCalImagingAlgo:
         # adjust ecut if necessary
         if ecut is None: ecut = self.ecut
         # init 2D cluster lists
-        clusters = [[] for i in range(0,self.maxlayer)] # initialise list of per-layer-clusters
+        clusters = [[] for i in range(0,2*(self.maxlayer+1))] # initialise list of per-layer-clusters
 
         # get the list of Hexels out of raw rechits
         points = self.populate(rHitsCollection, ecut = ecut)
-        
-        # loop over all layers, and for each layer create a list of clusters
-        for layer in range(0, self.maxlayer):
-            if (len(points[layer]) == 0): continue # protection
-            points_0 = [hex.x for hex in points[layer]] # list of hexels'coordinate 0 for current layer
-            points_1 = [hex.y for hex in points[layer]] # list of hexels'coordinate 1 for current layer
+
+        # loop over all layers, and for each layer create a list of clusters. layers are organised according to the sgn(z)
+        for layerID in range(0, 2*(self.maxlayer+1)):
+            if (len(points[layerID]) == 0): continue # protection
+            layer = abs(layerID - (points[layerID][0].z>0)*(self.maxlayer+1)) # map back to actual layer
+            points_0 = [hex.x for hex in points[layerID]] # list of hexels'coordinate 0 for current layer
+            points_1 = [hex.y for hex in points[layerID]] # list of hexels'coordinate 1 for current layer
             hit_kdtree = spatial.KDTree(zip(points_0, points_1), leafsize=self.leafsize) # create KDTree
-            maxdensity = self.calculateLocalDensity(points[layer], hit_kdtree, layer) # get the max density
+            maxdensity = self.calculateLocalDensity(points[layerID], hit_kdtree, layer) # get the max density
             #print "layer: ", layer, ", max density: ", maxdensity, ", total hits: ", len(points[layer])
-            self.calculateDistanceToHigher(points[layer], hit_kdtree) # get distances to the nearest higher density
-            clusters[layer] = self.findAndAssignClusters(points[layer], points_0, points_1, hit_kdtree, maxdensity, layer) # get clusters per layer
+            self.calculateDistanceToHigher(points[layerID]) # get distances to the nearest higher density
+            clusters[layerID] = self.findAndAssignClusters(points[layerID], points_0, points_1, hit_kdtree, maxdensity, layer) # get clusters per layer
             #print "found: ", len(clusters[layer]), " clusters."
 
         # return the clusters list
@@ -334,7 +338,8 @@ class HGCalImagingAlgo:
                     if (not iNode.isHalo):
                         energy += iNode.weight
                 if (verbosityLevel>=1):
-                    print "Layer: ", layer, "| 2D-cluster index: ", index, ", No. of cells = ", len(cluster), ", Energy  = ", energy, ", Phi = ", position.phi(), ", Eta = ", position.eta(), ", z = ", position.z()
+                    layerActual = layer - (cluster[0].z>0)*(self.maxlayer+1)
+                    print "LayerID: ", layer, "Actual layer: ", layerActual, "| 2D-cluster index: ", index, ", No. of cells = ", len(cluster), ", Energy  = ", energy, ", Phi = ", position.phi(), ", Eta = ", position.eta(), ", z = ", position.z()
                     for iNode in cluster:
                         if (not iNode.isHalo):
     #                        print "Layer: ", layer, "|                    ",       "  detid = ", iNode.detid, ", weight  = ", iNode.weight, ", phi = ", iNode.phi, ", eta = ", iNode.eta
@@ -344,11 +349,12 @@ class HGCalImagingAlgo:
             layer += 1
         return clusters_v
 
-    # make multi-clusters stasrting from the 2D clusters
-    def makePreClusters(self, clusters, multiclusterRadii = None, minClusters = None):
-        # adjust multiclusterRadii and/or minClusters if necessary
+    # make multi-clusters starting from the 2D clusters, without KDTree
+    def makePreClusters(self, clusters, multiclusterRadii = None, minClusters = None, verbosityLevel = None):
+        # adjust multiclusterRadii, minClusters and/or verbosityLevel if necessary
         if multiclusterRadii is None: multiclusterRadii = self.multiclusterRadii
         if minClusters is None: minClusters = self.minClusters
+        if verbosityLevel is None: verbosityLevel = self.verbosityLevel
         # get clusters in one list (just following original approach)
         thecls = self.getClusters(clusters)
 
@@ -373,11 +379,12 @@ class HGCalImagingAlgo:
                             distanceCheck = distanceReal2(thecls[es[i]],thecls[es[j]])
                         else:
                             distanceCheck = distanceDR2(thecls[es[i]],thecls[es[j]])
-                        # ---> need to get the "layer"of the current 2D cluster thecls[es[i]] in order to set the multiclusterRadius value below
+                        # ---> need to get the "layer"of the current 2D cluster thecls[es[j]] in order to set the multiclusterRadius value below
+                        layer = thecls[es[j]].thisCluster[0].layer
                         multiclusterRadius = 9999.
                         multiclusterRadius = multiclusterRadii[0]
-    #                    if(layer>28 and layer<=40): multiclusterRadius = multiclusterRadii[1]
-    #                    else: multiclusterRadius = multiclusterRadii[2]
+                        if(layer>28 and layer<=40): multiclusterRadius = multiclusterRadii[1]
+                        else: multiclusterRadius = multiclusterRadii[2]
                         if( distanceCheck < multiclusterRadius*multiclusterRadius and int(thecls[es[i]].z*vused[i])>0 ):
                             temp.append(thecls[es[j]])
                             vused[j] = vused[i]
@@ -386,9 +393,78 @@ class HGCalImagingAlgo:
                     position = getMultiClusterPosition(temp, 0)
                     energy = getMultiClusterEnergy(temp)
                     thePreClusters.append(BasicCluster(energy = energy, position = position, thisCluster = temp))
-                    print "Multi-cluster index: ", index, ", No. of 2D-clusters = ", len(temp), ", Energy  = ", energy, ", Phi = ", position.phi(), ", Eta = ", position.eta(), ", z = ", position.z()
+                    if (verbosityLevel>=1): print "Multi-cluster index: ", index, ", No. of 2D-clusters = ", len(temp), ", Energy  = ", energy, ", Phi = ", position.phi(), ", Eta = ", position.eta(), ", z = ", position.z()
                     index += 1
         return thePreClusters
+
+    # make multi-clusters starting from the 2D clusters, with KDTree
+    def make3DClusters(self, clusters, multiclusterRadii = None, minClusters = None, verbosityLevel = None):
+        # adjust multiclusterRadii, minClusters and/or verbosityLevel if necessary
+        if multiclusterRadii is None: multiclusterRadii = self.multiclusterRadii
+        if minClusters is None: minClusters = self.minClusters
+        if verbosityLevel is None: verbosityLevel = self.verbosityLevel
+        # get clusters in one list (just following original approach)
+        thecls = self.getClusters(clusters)
+        
+        # init "points" of 2D clusters for KDTree serach and zees of layers (check if it is really needed)
+        points = [[] for i in range(0,2*(self.maxlayer+1))] # initialise list of per-layer-lists of clusters
+        zees = [0. for layer in range(0,2*(self.maxlayer+1))]
+        for cls in thecls: # organise layers accoring to the sgn(z)
+            layerID = cls.thisCluster[0].layer
+            layerID += (cls.z>0)*(self.maxlayer+1) # +1 - yes or no?
+            points[layerID].append(cls)
+            zees[layerID] = cls.z
+
+        # init lists and vars
+        thePreClusters = []
+        vused = [0.]*len(thecls)
+        used = 0
+            
+        # indices sorted by decreasing energy
+        es = sorted(range(len(thecls)), key=lambda k: thecls[k].energy, reverse=True)
+        # loop over all clusters
+        index = 0
+        for i in range(0,len(thecls)):
+            if(vused[i]==0):
+                temp = [thecls[es[i]]]
+                if (thecls[es[i]].z>0): vused[i] = 1
+                else: vused[i] = -1
+                used += 1
+                from_ = [thecls[es[i]].x, thecls[es[i]].y, thecls[es[i]].z]
+                firstlayer = (thecls[es[i]].z>0)*(self.maxlayer+1) # +1 - yes or no?
+                lastlayer = firstlayer+self.maxlayer+1 # +1 - yes or no?
+                # print "Starting from cluster ", es[i], " at ", from_[0], " ", from_[1], " ", from_[2], "\n"
+                for j in range(firstlayer,lastlayer):
+                    if(zees[j]==0.): continue
+                    to_ = [0., 0., zees[j]]
+                    to_[0]=(from_[0]/from_[2])*to_[2]
+                    to_[1]=(from_[1]/from_[2])*to_[2]
+                    layer = abs(j-(zees[j]>0)*(self.maxlayer+1)) # +1 - yes or no?  #maps back from index used for KD trees to actual layer
+                    multiclusterRadius = 9999.
+                    if(layer <= 28): multiclusterRadius = multiclusterRadii[0]
+                    elif(layer <= 40): multiclusterRadius = multiclusterRadii[1]
+                    elif(layer <= 52): multiclusterRadius = multiclusterRadii[2]
+                    else: print "ERROR: Nonsense layer value - cannot assign multicluster radius"
+
+                    points_0 = [cls.x for cls in points[j]] # list of cls' coordinate 0 for layer j
+                    points_1 = [cls.y for cls in points[j]] # list of cls' coordinate 1 for layer j
+                    hit_kdtree = spatial.KDTree(zip(points_0, points_1), leafsize=self.leafsize) # create KDTree
+                    found = hit_kdtree.query_ball_point([to_[0],to_[1]],multiclusterRadius)
+                    # print "at layer ", j, " in box ", to[0]-radius, " ", to[0]+radius, " ", to[1]-radius, " ", to[1]+radius, "\n"
+                    # print "found ", len(found), " clusters within box ", "\n"
+                    for k in found:
+                        if(vused[k]==0 and distanceReal2(thecls[es[k]],to) < multiclusterRadius*multiclusterRadius):
+                            temp.append(thecls[es[k]])
+                            vused[k] = vused[i]
+                            used += 1
+                if(len(temp) > minClusters):
+                    position = getMultiClusterPosition(temp, 0)
+                    energy = getMultiClusterEnergy(temp)
+                    thePreClusters.append(BasicCluster(energy = energy, position = position, thisCluster = temp))
+                    if (verbosityLevel>=1): print "Multi-cluster index: ", index, ", No. of 2D-clusters = ", len(temp), ", Energy  = ", energy, ", Phi = ", position.phi(), ", Eta = ", position.eta(), ", z = ", position.z()
+                    index += 1
+        return thePreClusters
+
 
 # distance squared (in eta/phi) between the two objects (hexels, clusters)
 def distanceDR2(Hex1, Hex2):
