@@ -4,18 +4,31 @@ import numpy as np
 import HGCalHelpers
 from HGCalImagingAlgo import *
 
-## basic setup for testing
+### Basic setup for testing
+withKDTreeMulticulstering = False
+## option 1: No sensor dependence, eta/phi coordinates for multi-clustering
+dependSensor = False
 # 2D clustering
-ecut = 0.060 # need to be changed to ecut = 3. in case it's given wrt the noise and not in absolute units
 deltac = [2.,2.,2.]
+ecut = 0.060 # in absolute units
 # multi-clustering
-multiclusterRadii = [.015,.015,.015] # it's in cartesian coordiantes, per detector, used to be one value for all dets in eta/phi coordinates: 0.015
+multiclusterRadii = [0.015,0.015,0.015] # it's in eta/phi coordinates, per detector
 minClusters = 3
+### option 2: No sensor dependence, eta/phi coordinates for multi-clustering
+#dependSensor = True
+## 2D clustering
+#deltac = [2.,2.,2.]
+#ecut = 3 # relative to the noise
+## multi-clustering
+#multiclusterRadii = [2.,2.,2.] # it's in cartesian coordiantes, per detector
+#minClusters = 3
+
 # allowed events/layers for testing/histograming
 allowedRangeLayers = [] # layer considered for histograming e.g. [10, 15], empty for none
-allowedRangeEvents = list(range(0,8)) # event numbers considered for histograming, e.g. [5,6,7], empty for none
+allowedRangeEvents = list(range(0,100)) # event numbers considered for histograming, e.g. [5,6,7], empty for none
+
 # other
-verbosityLevel = 1 # 0 - only basic info (default); 1 - additional info; 2 - detailed info printed
+verbosityLevel = 0 # 0 - only basic info (default); 1 - additional info; 2 - detailed info printed
 
 def getRecHitDetIds(rechits):
     recHitsList = []
@@ -136,30 +149,15 @@ def histHexelsClustered(hexelsClustered, currentEvent, histDict, tag = "clustHex
 
     return histDict
 
-# histograming of abs. difference
-def histDiff(fValues, histDict, tag = "RelDiff_", axunit = "#DeltaE(GeV)"):
+# 1D histograming of list of values
+def histValue1D(fValues, histDict, tag = "hist1D_", axunit = "a.u.", binsRangeList = [10, -1, 1]):
     # sanity check
     if (histDict == None): return
     
     # define event-level hists
-    histDict[tag]  = ROOT.TH1F(tag, tag+";"+axunit, 200, -10, 10) # abs differencein energy
-
+    histDict[tag]  = ROOT.TH1F(tag, tag+";"+axunit, binsRangeList[0], binsRangeList[1], binsRangeList[2])
     # loop over all values
-    for value in fValues:
-        histDict[tag].Fill(value)
-    
-    return histDict
-
-
-# histograming of relative difference
-def histRelativeDiff(fValues, histDict, tag = "RelDiff_"):
-    # sanity check
-    if (histDict == None): return
-
-    # define event-level hists
-    histDict[tag]  = ROOT.TH1F(tag, tag+";#delta(%)", 200, -1, 1) # relative difference
-
-    # loop over all values
+    if (verbosityLevel>=2): print "tag: ", tag, ", fValues: ", fValues
     for value in fValues:
         histDict[tag].Fill(value)
     
@@ -191,7 +189,7 @@ def histPrintSaveAll(histDict, outDir):
 
 def main():
     # init output stuff
-    outDir = "testR"
+    outDir = "test"
     HGCalHelpers.createOutputDir(outDir)
     histDict = {}
 
@@ -215,12 +213,12 @@ def main():
         # get list of rechist associated to sim-cluster hits
         rHitsSimAssoc = getRecHitsSimAssoc(event.rechits_raw, event.simcluster)
         # histograming of rechist associated to sim-cluster hits
-        histDict = histRecHitsSimAssoc(rHitsSimAssoc, currentEvent, histDict, tag = "rHitsSimAssoc_", zoomed = False)
+        #histDict = histRecHitsSimAssoc(rHitsSimAssoc, currentEvent, histDict, tag = "rHitsSimAssoc_", zoomed = False)
 
         # get list of raw rechits with ecut cleaning
         rHitsCleaned = [rechit for rechit in event.rechits_raw if not rechit.energy < ecut]
         # histograming of raw rechist (with ecut cleaning)
-        histDict = histRecHits(rHitsCleaned, currentEvent, histDict, tag = "rHitsCleaned_", zoomed = True)
+        #histDict = histRecHits(rHitsCleaned, currentEvent, histDict, tag = "rHitsCleaned_", zoomed = True)
 
         ### Imaging algo run at RECO step (CMSSW)
         # get list of all clusters 2D produced with algo at RECO step (CMSSW)
@@ -229,18 +227,18 @@ def main():
         multiClustersList_reco = [multiCluster for multiCluster in event.multicluster]
 
         ### Imaging algo run as stand-alone (python)
-        HGCalAlgo = HGCalImagingAlgo(ecut = ecut, deltac = deltac, multiclusterRadii = multiclusterRadii, minClusters = minClusters, verbosityLevel = 0)
+        HGCalAlgo = HGCalImagingAlgo(ecut = ecut, deltac = deltac, multiclusterRadii = multiclusterRadii, minClusters = minClusters, dependSensor = dependSensor, verbosityLevel = 0)
         # produce 2D clusters with stand-alone algo, out of all raw rechits
         clusters2D_rerun = HGCalAlgo.makeClusters(event.rechits_raw) # hexels per-layer, per 2D cluster
         # produce multi-clusters with stand-alone algo, out of all 2D clusters
-        multiClustersList_rerun = HGCalAlgo.makePreClusters(clusters2D_rerun) # flat list of multi-clusters (as basic clusters), without KDTree
-        # multiClustersList_rerun = HGCalAlgo.make3DClusters(clusters2D_rerun) # flat list of multi-clusters (as basic clusters), with KDTree
+        if (not withKDTreeMulticulstering): multiClustersList_rerun = HGCalAlgo.makePreClusters(clusters2D_rerun) # flat list of multi-clusters (as basic clusters), without KDTree
+        else: multiClustersList_rerun = HGCalAlgo.make3DClusters(clusters2D_rerun) # flat list of multi-clusters (as basic clusters), with KDTree
 
         # get list of hexeles from 2D clusters produced with stand-alone algo
         clusters2DList_rerun = HGCalAlgo.getClusters(clusters2D_rerun, verbosityLevel = 0) # flat list of 2D clusters (as basic clusters)
         hexelsClustered_rerun = [iNode for bClust in clusters2DList_rerun for iNode in bClust.thisCluster if not iNode.isHalo]
         # histograming of clustered hexels
-        histDict = histHexelsClustered(hexelsClustered_rerun, currentEvent, histDict, tag = "clustHex_", zoomed = True)
+        #histDict = histHexelsClustered(hexelsClustered_rerun, currentEvent, histDict, tag = "clustHex_", zoomed = True)
 
         ### Compare stand-alone clustering and sim-clusters
         rHitsSimAssocDID = [rechit.detid for simClus in rHitsSimAssoc for rechit in simClus] # list of detids for sim-associated rehits (with ecut cleaning)
@@ -257,10 +255,10 @@ def main():
         # print some info
         if (verbosityLevel>=1):
             ls = sorted(range(len(clusters2DListMultiSelected_rerun)), key=lambda k: clusters2DListMultiSelected_rerun[k].thisCluster[0].layer, reverse=False) # indices sorted by increasing layer number
-#            for index in range(len(clusters2DListMultiSelected_rerun)): print "LayerID: ", clusters2DListMultiSelected_rerun[ls[index]].thisCluster[0].layer, "| 2D-cluster index: ", ls[index], ", No. of cells = ", len(clusters2DListMultiSelected_rerun[ls[index]].thisCluster), ", Energy  = ", clusters2DListMultiSelected_rerun[ls[index]].energy, ", Phi = ", clusters2DListMultiSelected_rerun[ls[index]].phi, ", Eta = ", clusters2DListMultiSelected_rerun[ls[index]].eta, ", z = ", clusters2DListMultiSelected_rerun[ls[index]].z
+            for index in range(len(clusters2DListMultiSelected_rerun)): print "LayerID: ", clusters2DListMultiSelected_rerun[ls[index]].thisCluster[0].layer, "| 2D-cluster index: ", ls[index], ", No. of cells = ", len(clusters2DListMultiSelected_rerun[ls[index]].thisCluster), ", Energy  = ", clusters2DListMultiSelected_rerun[ls[index]].energy, ", Phi = ", clusters2DListMultiSelected_rerun[ls[index]].phi, ", Eta = ", clusters2DListMultiSelected_rerun[ls[index]].eta, ", z = ", clusters2DListMultiSelected_rerun[ls[index]].z
             for index in range(len(multiClustersList_rerun)): print "Multi-cluster (RE-RUN) index: ", index, ", No. of 2D-clusters = ", len(multiClustersList_rerun[index].thisCluster), ", Energy  = ", multiClustersList_rerun[index].energy, ", Phi = ", multiClustersList_rerun[index].phi, ", Eta = ", multiClustersList_rerun[index].eta, ", z = ", multiClustersList_rerun[index].z
             ls = sorted(range(len(clusters2DList_reco)), key=lambda k: clusters2DList_reco[k].layer, reverse=False) # indices sorted by increasing layer number
-#            for index in range(len(clusters2DList_reco)): print "LayerID: ", clusters2DList_reco[ls[index]].layer, "| 2D-cluster index: ", ls[index], ", No. of cells = ", clusters2DList_reco[ls[index]].nhitAll, ", Energy  = ", clusters2DList_reco[ls[index]].energy, ", Phi = ", clusters2DList_reco[ls[index]].phi, ", Eta = ", clusters2DList_reco[ls[index]].eta, ", z = ", clusters2DList_reco[ls[index]].z
+            for index in range(len(clusters2DList_reco)): print "LayerID: ", clusters2DList_reco[ls[index]].layer, "| 2D-cluster index: ", ls[index], ", No. of cells = ", clusters2DList_reco[ls[index]].nhitAll, ", Energy  = ", clusters2DList_reco[ls[index]].energy, ", Phi = ", clusters2DList_reco[ls[index]].phi, ", Eta = ", clusters2DList_reco[ls[index]].eta, ", z = ", clusters2DList_reco[ls[index]].z
             for index in range(len(multiClustersList_reco)): print "Multi-cluster (RECO) index: ", index, ", No. of 2D-clusters = ", multiClustersList_reco[index].nclus, ", Energy  = ", multiClustersList_reco[index].energy, ", Phi = ", multiClustersList_reco[index].phi, ", Eta = ", multiClustersList_reco[index].eta, ", z = ", multiClustersList_reco[index].z
             print "num of clusters2D @reco : ", len(clusters2DList_reco)
             print "num of clusters2D re-run: ", len(clusters2DListMultiSelected_rerun)
@@ -271,12 +269,12 @@ def main():
             multiClusters_engDiffAbs.extend([(multiClustersList_rerun[k].energy - multiClustersList_reco[k].energy) for k in range(0,len(multiClustersList_rerun))]) # abs. diff.
             multiClusters_etaDiff.extend([100*(multiClustersList_rerun[k].eta - multiClustersList_reco[k].eta)/multiClustersList_reco[k].eta for k in range(0,len(multiClustersList_rerun))])
             multiClusters_phiDiff.extend([100*(multiClustersList_rerun[k].phi - multiClustersList_reco[k].phi)/multiClustersList_reco[k].phi for k in range(0,len(multiClustersList_rerun))])
-        multiClusters_nClust2DDiff.append(100*(len(clusters2DListMultiSelected_rerun) - len(clusters2DList_reco))/(0.+len(clusters2DList_reco))) # relative diff. in number of 2D clusters
+        multiClusters_nClust2DDiff.append(100*float(len(clusters2DListMultiSelected_rerun) - len(clusters2DList_reco))/float(len(clusters2DList_reco))) # relative diff. in number of 2D clusters
 
-    histDict = histDiff(multiClusters_engDiffAbs, histDict, tag = "MultClust_EngAbsDiffRerunReco", axunit = "#Delta E(GeV)")
-    histDict = histRelativeDiff(multiClusters_etaDiff, histDict, tag = "MultClust_EtaDiffRerunReco")
-    histDict = histRelativeDiff(multiClusters_phiDiff, histDict, tag = "MultClust_PhiDiffRerunReco")
-    histDict = histRelativeDiff(multiClusters_nClust2DDiff, histDict, tag = "MultClust_nClust2DDiffRerunReco")
+    histDict = histValue1D(multiClusters_engDiffAbs,   histDict, tag = "MultClust_EngAbsDiffRerunReco",   axunit = "#DeltaE(GeV)", binsRangeList = [200, -10, 10])
+    histDict = histValue1D(multiClusters_etaDiff,      histDict, tag = "MultClust_EtaDiffRerunReco",      axunit = "#delta(%)",    binsRangeList = [200, -10, 10])
+    histDict = histValue1D(multiClusters_phiDiff,      histDict, tag = "MultClust_PhiDiffRerunReco",      axunit = "#delta(%)",    binsRangeList = [200, -10, 10])
+    histDict = histValue1D(multiClusters_nClust2DDiff, histDict, tag = "MultClust_nClust2DDiffRerunReco", axunit = "#delta(%)",    binsRangeList = [200, -10, 10])
 
     # print/save histograms
     histPrintSaveAll(histDict, outDir)

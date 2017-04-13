@@ -17,7 +17,7 @@ from RecHitCalibration import RecHitCalibration
 
 # definition of Hexel element
 class Hexel:
-    def __init__(self, rHit = None, isHalfCell = None, sigmaNoise = None, thickness_in = None):
+    def __init__(self, rHit = None, sigmaNoise = None):
         self.eta = 0
         self.phi = 0
         self.x = 0
@@ -44,12 +44,10 @@ class Hexel:
             self.weight = rHit.energy
             self.detid = rHit.detid
             self.layer = rHit.layer
-        if isHalfCell is not None:
-            self.isHalfCell = isHalfCell
+            self.isHalfCell = rHit.isHalf
+            self.thickness = rHit.thickness
         if sigmaNoise is not None:
             self.sigmaNoise = sigmaNoise
-        if sigmaNoise is not None:
-            self.thickness = thickness
     def __gt__(self, other_rho):
         return self.rho > other_rho
 
@@ -87,41 +85,53 @@ class HGCalImagingAlgo:
     leafsize=100000
     # det. layers to consider
     maxlayer = 40 # should include BH (layers 41 - 52)
-    # sensor dependance or not
-    dependSensor = False
     
-    def __init__(self, ecut = None, deltac = None, multiclusterRadii = None, minClusters = None, verbosityLevel = None):
-
-        # 2D clustering
-        self.deltac = [2.,2.,2.] # it used to be one value for all sub-dets: delta_c = 2.
-        self.kappa = 10.
-        self.ecut = 0.060 # times the noise, it used to be in absolute units, e.g. 0.060
-        self.sigma2 = 1.0
-        if ecut is not None:
-            self.ecut = ecut
-        if deltac is not None:
-            self.deltac = deltac
-        # Have to understeand what to do with various parameters used for calculating the noise levels for a given sensor (and whether to use them):
-        # dEdXweights = cms.vdouble(dEdX_weights),
-        # thicknessCorrection = cms.vdouble(HGCalRecHit.thicknessCorrection),
-        # fcPerMip = cms.vdouble(HGCalUncalibRecHit.HGCEEConfig.fCPerMIP),
-        # fcPerEle = cms.double(fC_per_ele),
-        # nonAgedNoises = cms.vdouble(nonAgedNoises),
-        # noiseMip = hgchebackDigitizer.digiCfg.noise_MIP
+    def __init__(self, ecut = None, deltac = None, multiclusterRadii = None, minClusters = None, dependSensor = None, verbosityLevel = None):
+        # sensor dependance or not
+        self.dependSensor = False
+        if dependSensor is not None: self.dependSensor = dependSensor
         
-        # multi-clustering
-        self.multiclusterRadii = [0.015,0.015,0.015] # it's in cartesian coordiantes, per detector, used to be one value for all dets in eta/phi coordinates: 0.015
-        self.realSpaceCone = False # used to be False
-        self.minClusters = 3
-        if minClusters is not None:
-            self.minClusters = minClusters
-        if multiclusterRadii is not None:
-            self.multiclusterRadii = multiclusterRadii
+        # (multi)clustering parameters
+        if not dependSensor: # (no sensor dependence, eta/phi coordinates for multi-clustering)
+            # 2D clustering
+            self.deltac = [2.,2.,2.]
+            self.kappa = 10.
+            self.ecut = 0.060 # in absolute units
+            # multi-clustering
+            self.realSpaceCone = False
+            self.multiclusterRadii = [0.015,0.015,0.015] # it's in eta/phi coordinates, per detector
+            self.minClusters = 3
+        else: # (with sensor dependence, cartesian coordinates for multi-clustering)
+            # 2D clustering
+            self.deltac = [2.,2.,2.]
+            self.kappa = 9.
+            self.ecut = 3 # relative to the noise
+            # multi-clustering
+            self.realSpaceCone = True
+            self.multiclusterRadii = [2.,2.,2.] # it's in cartesian coordiantes, per detector
+            self.minClusters = 3
+
+        # adjust params according to inputs, if necessary
+        if ecut is not None: self.ecut = ecut
+        if deltac is not None: self.deltac = deltac
+        if minClusters is not None: self.minClusters = minClusters
+        if multiclusterRadii is not None: self.multiclusterRadii = multiclusterRadii
         
         # others
-        verbosityLevel = 0 # 0 - only basic info (default); 1 - additional info; 2 - detailed info printed
-        if verbosityLevel is not None:
-            self.verbosityLevel = verbosityLevel
+        self.verbosityLevel = 0 # 0 - only basic info (default); 1 - additional info; 2 - detailed info printed
+        if verbosityLevel is not None: self.verbosityLevel = verbosityLevel
+        
+        # print out the setup
+        if (self.verbosityLevel>=1):
+            print "HGCalImagingAlgo setup: "
+            print "   dependSensor: ", self.dependSensor
+            print "   deltac: ", self.deltac
+            print "   kappa: ", self.kappa
+            print "   ecut: ", self.ecut
+            print "   realSpaceCone: ", self.realSpaceCone
+            print "   multiclusterRadii: ", self.multiclusterRadii
+            print "   minClusters: ", self.minClusters
+            print "   verbosityLevel: ", self.verbosityLevel
 
     # calculate max local density in a 2D plane of hexels
     def calculateLocalDensity(self, nd, lp, layer):
@@ -188,7 +198,7 @@ class HGCalImagingAlgo:
         #sort Hexels by decreasing local density and by decreasing distance to higher
         rs = sorted(range(len(nd)), key=lambda k: nd[k].rho, reverse=True) # indices sorted by decreasing rho
         ds = sorted(range(len(nd)), key=lambda k: nd[k].delta, reverse=True) # sort in decreasing distance to higher
-        
+
         delta_c = 9999.
         if(layer<=28): delta_c = self.deltac[0]
         elif(layer<=40): delta_c = self.deltac[1]
@@ -196,7 +206,12 @@ class HGCalImagingAlgo:
 
         for i in range(0,len(nd)):
             if(nd[ds[i]].delta < delta_c): break # no more cluster centers to be looked at
-            if(nd[ds[i]].rho < maxdensity/self.kappa): continue # skip this as a potential cluster center because it fails the density cut
+            # skip this as a potential cluster center because it fails the density cut
+            if(self.dependSensor):
+                if(nd[ds[i]].rho < self.kappa*nd[ds[i]].sigmaNoise): continue # set equal to kappa times noise threshold
+            else:
+                if(nd[ds[i]].rho < maxdensity/self.kappa): continue
+            # store cluster index
             nd[ds[i]].clusterIndex = clusterIndex
             if (verbosityLevel>=2):
                 print "Adding new cluster with index ", clusterIndex
@@ -205,7 +220,7 @@ class HGCalImagingAlgo:
             
         # at this point clusterIndex is equal to the number of cluster centers - if it is zero we are done
         if(clusterIndex==0):
-            return clusterIndex
+            return []
         current_clusters = [[] for i in range(0,clusterIndex)]
 
         # assign to clusters, using the nearestHigher set from previous step (always set except for top density hit that is skipped)...
@@ -261,7 +276,7 @@ class HGCalImagingAlgo:
 
         return current_clusters
 
-    # make list of Hexels out of rechits (---> still need to introduce dependSensor options for different thickness, sigmaNoise, etc.)
+    # make list of Hexels out of rechits
     def populate(self, rHitsCollection, ecut = None):
         # adjust ecut if necessary
         if ecut is None: ecut = self.ecut
@@ -272,6 +287,7 @@ class HGCalImagingAlgo:
         for rHit in rHitsCollection:
             if (rHit.layer > self.maxlayer): continue # current protection
             # energy treshold dependent on sensor
+            sigmaNoise = 0.
             if(self.dependSensor):
                 thickIndex = -1
                 if( rHit.layer <= 40 ): # EE + FH
@@ -290,7 +306,7 @@ class HGCalImagingAlgo:
             if((not self.dependSensor) and rHit.energy < ecut): continue
             # organise layers accoring to the sgn(z)
             layerID = rHit.layer + (rHit.z>0)*(self.maxlayer+1) # +1 - yes or no?
-            points[layerID].append(Hexel(rHit))
+            points[layerID].append(Hexel(rHit, sigmaNoise))
 
         return points
 
@@ -453,7 +469,8 @@ class HGCalImagingAlgo:
                     # print "at layer ", j, " in box ", to[0]-radius, " ", to[0]+radius, " ", to[1]-radius, " ", to[1]+radius, "\n"
                     # print "found ", len(found), " clusters within box ", "\n"
                     for k in found:
-                        if(vused[k]==0 and distanceReal2(thecls[es[k]],to) < multiclusterRadius*multiclusterRadius):
+                        h_to = Hexel(); h_to.x = to_[0]; h_to.y = to_[1] # dummy object
+                        if(vused[k]==0 and distanceReal2(thecls[es[k]],h_to) < multiclusterRadius*multiclusterRadius):
                             temp.append(thecls[es[k]])
                             vused[k] = vused[i]
                             used += 1
