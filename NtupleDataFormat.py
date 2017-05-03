@@ -11,7 +11,7 @@ class _Collection(object):
 
     """
 
-    def __init__(self, tree, sizeBranch, objclass):
+    def __init__(self, tree, sizeBranch, objclass, prefix):
         """Constructor.
 
         Arguments:
@@ -23,6 +23,7 @@ class _Collection(object):
         self._tree = tree
         self._sizeBranch = sizeBranch
         self._objclass = objclass
+        self._prefix = prefix
 
     def size(self):
         """Number of objects in the collection."""
@@ -39,7 +40,7 @@ class _Collection(object):
     def __iter__(self):
         """Returns generator for the objects."""
         for index in xrange(self.size()):
-            yield self._objclass(self._tree, index)
+            yield self._objclass(self._tree, index, self._prefix)
 
 
 class _Object(object):
@@ -104,7 +105,7 @@ class HGCalNtuple(object):
 
         Arguments:
         fileName -- String for path to the ROOT file
-        tree     -- Name of the TTree object inside the ROOT file (default: 'trackingNtuple/tree')
+        tree     -- Name of the TTree object inside the ROOT file (default: 'ana/hgc')
         """
         super(HGCalNtuple, self).__init__()
         self._file = ROOT.TFile.Open(fileName)
@@ -286,7 +287,7 @@ class RecHits(_Collection):
         tree -- TTree object
         prefix -- TBranch prefix
         """
-        super(RecHits, self).__init__(tree, prefix + "_pt", RecHit)
+        super(RecHits, self).__init__(tree, prefix + "_pt", RecHit, prefix)
 
 
 ##########
@@ -338,7 +339,8 @@ class GenParticles(_Collection):
         tree -- TTree object
         prefix -- TBranch prefix
         """
-        super(GenParticles, self).__init__(tree, prefix + "_pt", GenParticle)
+        # self.prefix = prefix
+        super(GenParticles, self).__init__(tree, prefix + "_pt", GenParticle, prefix)
 
 
 ##########
@@ -366,7 +368,7 @@ class LayerClusters(_Collection):
         tree -- TTree object
         prefix -- TBranch prefix
         """
-        super(LayerClusters, self).__init__(tree, prefix + "_pt", LayerCluster)
+        super(LayerClusters, self).__init__(tree, prefix + "_pt", LayerCluster, prefix)
 
 
 ##########
@@ -394,7 +396,7 @@ class MultiClusters(_Collection):
         tree -- TTree object
         prefix -- TBranch prefix
         """
-        super(MultiClusters, self).__init__(tree, prefix + "_pt", MultiCluster)
+        super(MultiClusters, self).__init__(tree, prefix + "_pt", MultiCluster, prefix)
 
 
 ##########
@@ -422,7 +424,7 @@ class Tracks(_Collection):
         tree -- TTree object
         prefix -- TBranch prefix
         """
-        super(Tracks, self).__init__(tree, prefix + "_pt", Track)
+        super(Tracks, self).__init__(tree, prefix + "_pt", Track, prefix)
 
 
 ##########
@@ -450,7 +452,7 @@ class PFClusters(_Collection):
         tree -- TTree object
         prefix -- TBranch prefix
         """
-        super(PFClusters, self).__init__(tree, prefix + "_pt", PFCluster)
+        super(PFClusters, self).__init__(tree, prefix + "_pt", PFCluster, prefix)
 
 
 ##########
@@ -478,7 +480,7 @@ class SimClusters(_Collection):
         tree -- TTree object
         prefix -- TBranch prefix
         """
-        super(SimClusters, self).__init__(tree, prefix + "_pt", SimCluster)
+        super(SimClusters, self).__init__(tree, prefix + "_pt", SimCluster, prefix)
 
 
 ##########
@@ -506,4 +508,4 @@ class CaloParticles(_Collection):
         tree -- TTree object
         prefix -- TBranch prefix
         """
-        super(CaloParticles, self).__init__(tree, prefix + "_pt", CaloParticle)
+        super(CaloParticles, self).__init__(tree, prefix + "_pt", CaloParticle, prefix)
