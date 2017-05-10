@@ -35,7 +35,7 @@ class _Collection(object):
 
     def __getitem__(self, index):
         """Get object 'index' in the collection."""
-        return self._objclass(self._tree, index)
+        return self._objclass(self._tree, index, self._prefix)
 
     def __iter__(self):
         """Returns generator for the objects."""
