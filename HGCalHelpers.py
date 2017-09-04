@@ -21,6 +21,25 @@ def createOutputDir(outDir):
         os.makedirs(outDir)
 
 
+def OverflowToLast(hist):
+    """Move overflow bin to last histogram bin, underflow to first"""
+    binContent = hist.GetBinContent(hist.GetNbinsX()) + hist.GetBinContent(hist.GetNbinsX()+1)
+    binError = ROOT.TMath.Sqrt(hist.GetBinError(hist.GetNbinsX())*hist.GetBinError(hist.GetNbinsX()) + hist.GetBinError(hist.GetNbinsX()+1)*hist.GetBinError(hist.GetNbinsX()+1))
+    hist.SetBinContent(hist.GetNbinsX(), binContent)
+    hist.SetBinError(hist.GetNbinsX(), binError)
+    hist.SetBinContent(hist.GetNbinsX()+1, 0.)
+    hist.SetBinError(hist.GetNbinsX()+1, 0.)
+
+    binContent = hist.GetBinContent(0) + hist.GetBinContent(1)
+    binError = ROOT.TMath.Sqrt(hist.GetBinError(0)*hist.GetBinError(0) + hist.GetBinError(1)*hist.GetBinError(1))
+    hist.SetBinContent(1, binContent)
+    hist.SetBinError(1, binError)
+    hist.SetBinContent(0, 0.)
+    hist.SetBinError(0, 0.)
+
+    return hist
+
+
 def saveHistograms(histDict, canvas, outDir, imgType, logScale=False, doFit=False, rootOnly=False, plotsOnly=False):
     """Save all the histograms as ROOT file and image files, optionally fit Gaussian."""
     # also store histograms in ROOT file
@@ -42,12 +61,14 @@ def saveHistograms(histDict, canvas, outDir, imgType, logScale=False, doFit=Fals
             canvas.SetLogy(False)
     for key, item in histDict.items():
         # do not save empty histograms
-        if (type(item) == ROOT.TH1F) or (type(item) == ROOT.TH2F):
+        if (type(item) == ROOT.TH1F) or (type(item) == ROOT.TH2F) or (type(item) == ROOT.TH3F):
             if item.GetEntries() == 0:
                 continue
         # write histogram to file
-        if type(item) == ROOT.TH2F or type(item) == ROOT.TH1F:
+        if type(item) == ROOT.TH1F or type(item) == ROOT.TH2F or type(item) == ROOT.TH3F:
             item.Sumw2()
+            if type(item) == ROOT.TH1F:
+                item = OverflowToLast(item)
         if not plotsOnly:
             item.Write()
         if not rootOnly:
@@ -55,6 +76,11 @@ def saveHistograms(histDict, canvas, outDir, imgType, logScale=False, doFit=Fals
                 ROOT.gStyle.SetOptStat(0)
                 item.Draw("colz")
                 item.GetYaxis().SetTitleOffset(1.5)
+            elif type(item) == ROOT.TH3F:
+                ROOT.gStyle.SetOptStat(0)
+                item.Draw("box")
+                item.GetYaxis().SetTitleOffset(1.5)
+                item.GetZaxis().SetTitleOffset(1.5)
             else:
                 ROOT.gStyle.SetOptStat("mr")
                 if type(item) == ROOT.TH1F:
